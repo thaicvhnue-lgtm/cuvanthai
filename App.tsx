@@ -9,14 +9,9 @@ import { exportToCSV, generateClassReportPDF } from './services/exportService';
 
 function App() {
   const [activeTab, setActiveTab] = useState<'overview' | 'classes' | 'comments'>('overview');
-  const [semester, setSemester] = useState('HK1');
-  
   // Navigation State (Deep link from Overview to Class)
   const [targetStudentId, setTargetStudentId] = useState<string | null>(null);
 
-  // Teacher Info State
-  const [teacherName, setTeacherName] = useState('Nguyễn Thu Hà');
-  const [teacherAvatar, setTeacherAvatar] = useState('https://picsum.photos/40/40');
   const [isEditingTeacher, setIsEditingTeacher] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
@@ -25,9 +20,53 @@ function App() {
   const [streak, setStreak] = useState(0);
 
   // Global State
-  const [classes, setClasses] = useState<Classroom[]>(MOCK_CLASSES);
-  const [students, setStudents] = useState<Student[]>(MOCK_STUDENTS);
-  const [templates, setTemplates] = useState<CommentTemplate[]>(MOCK_TEMPLATES);
+  const [classes, setClasses] = useState<Classroom[]>(() => {
+    const saved = localStorage.getItem('edu_classes');
+    return saved ? JSON.parse(saved) : MOCK_CLASSES;
+  });
+  const [students, setStudents] = useState<Student[]>(() => {
+    const saved = localStorage.getItem('edu_students');
+    return saved ? JSON.parse(saved) : MOCK_STUDENTS;
+  });
+  const [templates, setTemplates] = useState<CommentTemplate[]>(() => {
+    const saved = localStorage.getItem('edu_templates');
+    return saved ? JSON.parse(saved) : MOCK_TEMPLATES;
+  });
+
+  const [teacherName, setTeacherName] = useState(() => {
+    return localStorage.getItem('edu_teacherName') || 'Nguyễn Thu Hà';
+  });
+  const [teacherAvatar, setTeacherAvatar] = useState(() => {
+    return localStorage.getItem('edu_teacherAvatar') || 'https://picsum.photos/40/40';
+  });
+  const [semester, setSemester] = useState(() => {
+    return localStorage.getItem('edu_semester') || 'HK1';
+  });
+
+  // Persist State to LocalStorage
+  useEffect(() => {
+    localStorage.setItem('edu_classes', JSON.stringify(classes));
+  }, [classes]);
+
+  useEffect(() => {
+    localStorage.setItem('edu_students', JSON.stringify(students));
+  }, [students]);
+
+  useEffect(() => {
+    localStorage.setItem('edu_templates', JSON.stringify(templates));
+  }, [templates]);
+
+  useEffect(() => {
+    localStorage.setItem('edu_teacherName', teacherName);
+  }, [teacherName]);
+
+  useEffect(() => {
+    localStorage.setItem('edu_teacherAvatar', teacherAvatar);
+  }, [teacherAvatar]);
+
+  useEffect(() => {
+    localStorage.setItem('edu_semester', semester);
+  }, [semester]);
 
   // Initialize Streak Logic
   useEffect(() => {
