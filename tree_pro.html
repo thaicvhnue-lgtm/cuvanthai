@@ -1,0 +1,2482 @@
+﻿<!--
+  - Dự án: Cây Kí Ức 3D - Lưu Giữ Những Điều Đẹp Nhất Đã Qua
+  - Tác giả: vinkay215
+-->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cây Kí Ức 3D</title>
+    <style>
+        body { 
+            margin:0; overflow:hidden; 
+            background:linear-gradient(180deg, #87ceeb 0%, #b0d8f0 50%, #ffd89b 100%);
+            font-family:'Times New Roman',serif; 
+        }
+        #canvas-container { width:100vw; height:100vh; position:absolute; top:0; left:0; z-index:1; }
+        
+        /* ── BACKGROUND IMAGE ── */
+        #background-image {
+            position:absolute; top:0; left:0; width:100%; height:100%; z-index:0;
+            background-size:cover; background-position:center; background-repeat:no-repeat;
+            opacity:0.7; /* Tăng từ 0.6 lên 0.7 để rõ hơn */
+        }
+        
+        /* ── CHIM BAY ── */
+        .bird {
+            position:absolute; width:40px; height:30px; z-index:5;
+            animation:flyBird 25s linear infinite;
+            opacity:0.4; 
+            will-change:transform;
+        }
+        @keyframes flyBird {
+            0% { transform:translateX(-100px) translateY(0) scale(0.8); }
+            50% { transform:translateX(50vw) translateY(-30px) scale(1); }
+            100% { transform:translateX(calc(100vw + 100px)) translateY(-10px) scale(0.8); }
+        }
+        .bird::before, .bird::after {
+            content:''; position:absolute; background:#2c3e50;
+            width:20px; height:3px; border-radius:50%;
+            animation:flapWing 0.5s ease-in-out infinite;
+        }
+        .bird::before { left:0; transform-origin:right center; }
+        .bird::after { right:0; transform-origin:left center; }
+        @keyframes flapWing {
+            0%, 100% { transform:rotateY(0deg) rotateZ(-10deg); }
+            50% { transform:rotateY(0deg) rotateZ(10deg); }
+        }
+        
+        /* ── MÂY TRÔI ── */
+        .cloud {
+            position:absolute; z-index:3; opacity:0.5;
+            animation:driftCloud 60s linear infinite;
+            will-change:transform;
+        }
+        @keyframes driftCloud {
+            0% { transform:translateX(-200px); }
+            100% { transform:translateX(calc(100vw + 200px)); }
+        }
+        .cloud::before, .cloud::after {
+            content:''; position:absolute; background:#fff;
+            border-radius:50%;
+        }
+        .cloud::before {
+            width:80px; height:40px; top:0; left:20px;
+            box-shadow:100px 0 0 -10px #fff, 50px 10px 0 -5px #fff;
+        }
+        .cloud::after {
+            width:60px; height:30px; top:15px; left:40px;
+        }
+        
+        /* ── ÁNH SÁNG LUNG LINH ── */
+        .light-ray {
+            position:absolute; top:-50px; width:2px; height:150px;
+            background:linear-gradient(180deg, transparent, rgba(255,255,255,0.2), transparent);
+            z-index:2; animation:shimmer 4s ease-in-out infinite;
+            will-change:opacity, transform;
+        }
+        @keyframes shimmer {
+            0%, 100% { opacity:0.1; transform:translateY(0) scaleY(1); }
+            50% { opacity:0.4; transform:translateY(20px) scaleY(1.2); }
+        }
+        
+        /* ── BỒ CÔNG ANH BAY ── */
+        .dandelion {
+            position:absolute; width:6px; height:6px; z-index:4;
+            background:radial-gradient(circle, rgba(255,255,255,0.8), transparent);
+            border-radius:50%; animation:floatDandelion 15s ease-in-out infinite;
+            opacity:0.6;
+            will-change:transform;
+        }
+        @keyframes floatDandelion {
+            0% { transform:translate(0, 100vh) rotate(0deg); opacity:0; }
+            10% { opacity:0.6; }
+            90% { opacity:0.6; }
+            100% { transform:translate(100px, -100px) rotate(360deg); opacity:0; }
+        }
+        
+        /* ── BƯỚM BAY ── */
+        .butterfly {
+            position:absolute; width:20px; height:20px; z-index:6;
+            animation:butterflyFly 20s ease-in-out infinite;
+            opacity:0.4;
+            will-change:transform;
+        }
+        @keyframes butterflyFly {
+            0%, 100% { transform:translate(0, 50vh) rotate(0deg) scale(0.8); }
+            25% { transform:translate(30vw, 30vh) rotate(45deg) scale(1); }
+            50% { transform:translate(60vw, 60vh) rotate(-30deg) scale(0.9); }
+            75% { transform:translate(80vw, 40vh) rotate(60deg) scale(1.1); }
+        }
+        .butterfly::before {
+            content:'🦋'; position:absolute; font-size:20px;
+        }
+        
+        /* ── VÒNG SÁNG HUYỀN ẢO ── */
+        .glow-ring {
+            position:absolute; border-radius:50%; z-index:2;
+            border:1px solid rgba(255,215,0,0.15);
+            animation:pulseRing 6s ease-in-out infinite;
+            pointer-events:none;
+            will-change:transform, opacity;
+        }
+        @keyframes pulseRing {
+            0%, 100% { transform:scale(1); opacity:0.2; }
+            50% { transform:scale(1.1); opacity:0.4; }
+        }
+        #ui-layer {
+            position:absolute; top:0; left:0; width:100%; height:100%;
+            z-index:10; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center;
+            padding-top:30px; box-sizing:border-box;
+        }
+        .ui-hidden { opacity:0!important; pointer-events:none!important; }
+        #loader {
+            position:absolute; top:0; left:0; width:100%; height:100%;
+            background:linear-gradient(180deg,#1a3a1a 0%,#0d1f0d 100%);
+            z-index:100; display:flex; flex-direction:column;
+            align-items:center; justify-content:center;
+            transition:opacity 1s ease-out;
+        }
+        .loader-text { color:#a5d6a7; font-size:13px; letter-spacing:4px; margin-top:20px; text-transform:uppercase; }
+        .spinner { width:40px; height:40px; border:1px solid rgba(100,200,80,0.2); border-top:1px solid #66bb6a; border-radius:50%; animation:spin 1s linear infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        h1 {
+            color:#ffffff; font-size:52px; margin:0; font-weight:700; letter-spacing:5px;
+            text-shadow: 0 0 20px rgba(255,215,0,0.8), 0 0 40px rgba(255,215,0,0.5), 2px 2px 4px rgba(0,0,0,0.8);
+            font-family:'Cinzel','Times New Roman',serif;
+            animation:titleGlow 3s ease-in-out infinite;
+        }
+        @keyframes titleGlow {
+            0%, 100% { text-shadow: 0 0 20px rgba(255,215,0,0.8), 0 0 40px rgba(255,215,0,0.5), 2px 2px 4px rgba(0,0,0,0.8); }
+            50% { text-shadow: 0 0 30px rgba(255,215,0,1), 0 0 60px rgba(255,215,0,0.7), 2px 2px 4px rgba(0,0,0,0.8); }
+        }
+        .tagline { 
+            color:#ffd700; font-size:14px; letter-spacing:2px; margin:6px 0 0; 
+            font-style:italic; text-shadow:1px 1px 3px rgba(0,0,0,0.7);
+            animation:fadeInOut 4s ease-in-out infinite;
+        }
+        @keyframes fadeInOut {
+            0%, 100% { opacity:0.7; }
+            50% { opacity:1; }
+        }
+        .controls-wrapper {
+            position:absolute; top:25px; right:25px; pointer-events:auto;
+            display:flex; flex-direction:column; align-items:flex-end; gap:8px; z-index:20;
+        }
+        .btn-group { display:flex; gap:8px; align-items:center; }
+        .upload-btn {
+            background:rgba(10,10,10,0.65); border:1px solid rgba(120,200,80,0.45);
+            color:#a5d6a7; padding:9px 18px; cursor:pointer; text-transform:uppercase;
+            letter-spacing:2px; font-size:10px; transition:all 0.3s;
+            display:flex; align-items:center; justify-content:center; backdrop-filter:blur(6px);
+            border-radius:4px;
+        }
+        .upload-btn:hover { background:#4caf50; color:#fff; box-shadow:0 0 18px rgba(76,175,80,0.5); }
+        .icon-btn {
+            background:rgba(180,50,50,0.65); border:1px solid rgba(200,80,80,0.45);
+            color:#ffaaaa; padding:9px 12px; cursor:pointer; transition:all 0.3s;
+            display:flex; align-items:center; justify-content:center; backdrop-filter:blur(6px);
+            border-radius:4px; font-size:14px;
+        }
+        .icon-btn:hover { background:#d32f2f; color:#fff; box-shadow:0 0 18px rgba(211,47,47,0.5); }
+        .audio-btn {
+            background:rgba(10,10,10,0.65); border:1px solid rgba(120,200,80,0.45);
+            color:#a5d6a7; padding:9px 12px; cursor:pointer; transition:all 0.3s;
+            display:flex; align-items:center; justify-content:center; backdrop-filter:blur(6px);
+            border-radius:4px; font-size:14px; position:fixed; bottom:25px; right:25px; z-index:100;
+            pointer-events:auto;
+        }
+        .audio-btn:hover { background:#4caf50; color:#fff; box-shadow:0 0 18px rgba(76,175,80,0.5); }
+        .audio-btn.muted { background:rgba(180,50,50,0.65); border-color:rgba(200,80,80,0.45); color:#ffaaaa; }
+        .audio-btn.muted:hover { background:#d32f2f; }
+        .help-btn {
+            background:rgba(10,10,10,0.65); border:1px solid rgba(120,200,80,0.45);
+            color:#a5d6a7; padding:9px 12px; cursor:pointer; transition:all 0.3s;
+            display:flex; align-items:center; justify-content:center; backdrop-filter:blur(6px);
+            border-radius:4px; font-size:16px; position:fixed; bottom:25px; right:80px; z-index:100;
+            pointer-events:auto; font-weight:bold;
+        }
+        .help-btn:hover { background:#4caf50; color:#fff; box-shadow:0 0 18px rgba(76,175,80,0.5); }
+        .slideshow-btn {
+            background:rgba(10,10,10,0.65); border:1px solid rgba(120,200,80,0.45);
+            color:#a5d6a7; padding:9px 12px; cursor:pointer; transition:all 0.3s;
+            display:flex; align-items:center; justify-content:center; backdrop-filter:blur(6px);
+            border-radius:4px; font-size:16px; position:fixed; bottom:25px; right:135px; z-index:100;
+            pointer-events:auto; font-weight:bold;
+        }
+        .slideshow-btn:hover { background:#4caf50; color:#fff; box-shadow:0 0 18px rgba(76,175,80,0.5); }
+        .slideshow-btn.active { background:#4caf50; color:#fff; animation:pulse 2s ease-in-out infinite; }
+        @keyframes pulse { 0%, 100% { box-shadow:0 0 18px rgba(76,175,80,0.5); } 50% { box-shadow:0 0 28px rgba(76,175,80,0.8); } }
+        
+        .slideshow-controls {
+            position:fixed; bottom:25px; right:195px; z-index:100;
+            display:flex; align-items:center; gap:6px; pointer-events:auto;
+            background:rgba(10,10,10,0.65); border:1px solid rgba(120,200,80,0.45);
+            padding:6px 10px; border-radius:4px; backdrop-filter:blur(6px);
+        }
+        .slideshow-controls label {
+            color:#a5d6a7; font-size:11px; letter-spacing:1px; text-transform:uppercase;
+        }
+        .slideshow-controls input {
+            width:45px; padding:4px 6px; background:rgba(255,255,255,0.1);
+            border:1px solid rgba(120,200,80,0.3); border-radius:3px;
+            color:#fff; font-size:13px; text-align:center;
+        }
+        .slideshow-controls input:focus {
+            outline:none; border-color:#4caf50; background:rgba(255,255,255,0.15);
+        }
+        .hint-text { color:rgba(165,214,167,0.55); font-size:9px; letter-spacing:1px; text-transform:uppercase; text-align:right; margin-top:8px; }
+        input[type="file"] { display:none; }
+        #help-dialog {
+            position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+            background:rgba(15,15,15,0.98); border:2px solid rgba(120,200,80,0.6);
+            border-radius:16px; padding:30px 40px; z-index:300;
+            box-shadow:0 12px 48px rgba(0,0,0,0.8); backdrop-filter:blur(12px);
+            max-width:600px; width:90%; max-height:85vh; overflow-y:auto;
+            display:none; color:#e8f5e9;
+        }
+        #help-dialog.show { display:block; animation:fadeIn 0.3s ease; }
+        @keyframes fadeIn { from{opacity:0;transform:translate(-50%,-50%) scale(0.9);} to{opacity:1;transform:translate(-50%,-50%) scale(1);} }
+        #help-dialog h2 {
+            color:#ffd700; font-size:28px; margin:0 0 20px; text-align:center;
+            text-shadow:0 0 12px rgba(255,215,0,0.6); font-family:'Cinzel','Times New Roman',serif;
+        }
+        #help-dialog .close-btn {
+            position:absolute; top:15px; right:20px; font-size:28px; color:#a5d6a7;
+            cursor:pointer; transition:all 0.3s; line-height:1;
+        }
+        #help-dialog .close-btn:hover { color:#ff5252; transform:rotate(90deg); }
+        .help-section { margin-bottom:25px; }
+        .help-section h3 {
+            color:#81c784; font-size:18px; margin:0 0 12px; border-bottom:1px solid rgba(129,199,132,0.3);
+            padding-bottom:6px; display:flex; align-items:center; gap:8px;
+        }
+        .help-item {
+            display:flex; align-items:center; gap:15px; margin:10px 0; padding:10px;
+            background:rgba(255,255,255,0.03); border-radius:8px; transition:all 0.2s;
+        }
+        .help-item:hover { background:rgba(76,175,80,0.1); }
+        .help-icon {
+            font-size:32px; min-width:40px; text-align:center;
+            filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+        .help-content { flex:1; }
+        .help-title { color:#ffd700; font-weight:bold; font-size:14px; margin-bottom:4px; }
+        .help-desc { color:#c8e6c9; font-size:13px; line-height:1.5; }
+        .help-key {
+            display:inline-block; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);
+            padding:3px 8px; border-radius:4px; font-family:monospace; font-size:12px;
+            color:#ffd700; margin:0 3px; box-shadow:0 2px 4px rgba(0,0,0,0.3);
+        }
+        #help-overlay {
+            position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.7); z-index:250; display:none;
+        }
+        #help-overlay.show { display:block; animation:fadeInOverlay 0.3s ease; }
+        @keyframes fadeInOverlay { from{opacity:0;} to{opacity:1;} }
+        #camera-permission-banner {
+            position:fixed; bottom:25px; left:50%; transform:translateX(-50%);
+            background:rgba(15,15,15,0.95); border:1px solid rgba(212,175,55,0.5);
+            border-radius:12px; padding:18px 26px; z-index:200;
+            display:flex; align-items:center; gap:14px;
+            box-shadow:0 8px 32px rgba(0,0,0,0.5); backdrop-filter:blur(10px);
+            transition:all 0.4s ease; max-width:480px; opacity:0; pointer-events:none;
+        }
+        #camera-permission-banner.show { opacity:1; pointer-events:auto; }
+        #camera-permission-banner.hide { opacity:0; pointer-events:none; }
+        .camera-icon { font-size:28px; color:#d4af37; animation:pulse 2s ease-in-out infinite; }
+        @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.1);} }
+        .camera-message { flex:1; color:#fceea7; font-size:13px; line-height:1.5; }
+        .camera-message strong { color:#d4af37; display:block; margin-bottom:4px; }
+        .camera-btn {
+            background:linear-gradient(135deg,#d4af37,#ffd966); color:#000; border:none;
+            padding:9px 18px; border-radius:7px; cursor:pointer; font-weight:bold;
+            font-size:12px; text-transform:uppercase; letter-spacing:1px; transition:all 0.3s;
+        }
+        .camera-btn:hover { transform:translateY(-2px); box-shadow:0 5px 18px rgba(212,175,55,0.5); }
+        #webcam-wrapper {
+            position:absolute; bottom:25px; left:25px; width:240px; height:180px;
+            border:1px solid rgba(100,200,80,0.4); box-shadow:0 0 18px rgba(0,0,0,0.8);
+            border-radius:4px; overflow:hidden; pointer-events:none; z-index:50; background:#000;
+        }
+        #webcam { width:100%; height:100%; object-fit:cover; transform:scaleX(-1); }
+        #debug-info {
+            position:absolute; bottom:4px; left:4px; color:rgba(165,214,167,0.8);
+            font-size:9px; font-family:monospace; background:rgba(0,0,0,0.5); padding:2px 5px;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap');
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+            "@mediapipe/tasks-vision": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/+esm"
+        }
+    }
+    </script>
+</head>
+<body>
+<div id="loader"><div class="spinner"></div><div class="loader-text">Cây Kí Ức đang nở lộc...</div></div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- BACKGROUND IMAGE (phía sau cây) -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div id="background-image"></div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- TRANG TRÍ THƠ MỘNG: Chim bay, mây trôi, ánh sáng, bồ công anh, bướm... -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- Chim bay (1 con duy nhất) -->
+<div class="bird" style="top:20%; left:-50px; animation-delay:0s; animation-duration:30s;"></div>
+
+<!-- Mây trôi (2 đám thay vì 4) -->
+<div class="cloud" style="top:10%; left:-200px; animation-delay:0s; animation-duration:70s;"></div>
+<div class="cloud" style="top:20%; left:-250px; animation-delay:35s; animation-duration:80s; opacity:0.4;"></div>
+
+<!-- Ánh sáng lung linh (1 tia duy nhất) -->
+<div class="light-ray" style="left:50%; animation-delay:0s; animation-duration:5s;"></div>
+
+<!-- Bồ công anh bay (6 hạt thay vì 12) -->
+<div class="dandelion" style="left:15%; animation-delay:0s; animation-duration:18s;"></div>
+<div class="dandelion" style="left:35%; animation-delay:5s; animation-duration:20s;"></div>
+<div class="dandelion" style="left:55%; animation-delay:10s; animation-duration:16s;"></div>
+<div class="dandelion" style="left:70%; animation-delay:3s; animation-duration:19s;"></div>
+<div class="dandelion" style="left:25%; animation-delay:8s; animation-duration:17s;"></div>
+<div class="dandelion" style="left:80%; animation-delay:12s; animation-duration:21s;"></div>
+
+<!-- Bướm bay (2 con thay vì 3) -->
+<div class="butterfly" style="animation-delay:0s; animation-duration:25s;"></div>
+<div class="butterfly" style="animation-delay:12s; animation-duration:30s;"></div>
+
+<!-- Vòng sáng huyền ảo (1 vòng duy nhất) -->
+<div class="glow-ring" style="width:600px; height:600px; top:50%; left:50%; margin:-300px 0 0 -300px; animation-delay:0s;"></div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+
+<div id="canvas-container"></div>
+<div id="ui-layer">
+    <h1>Cây Kí Ức</h1>
+    <p class="tagline">"Lưu giữ những điều đẹp nhất đã qua."</p>
+    <div class="controls-wrapper">
+        <div class="btn-group">
+            <label class="upload-btn">📁 Tải Album<input type="file" id="folder-input" webkitdirectory directory multiple></label>
+            <label class="upload-btn">🖼️ Chọn Ảnh<input type="file" id="file-input" multiple accept="image/*"></label>
+            <label class="upload-btn">🌄 Ảnh Nền<input type="file" id="background-input" accept="image/*"></label>
+            <button class="icon-btn" id="clear-photos-btn" title="Xóa tất cả ảnh">🗑️</button>
+        </div>
+        <div class="hint-text">Xòe tay = lá bay | Nắm tay = về cây</div>
+    </div>
+</div>
+<div id="webcam-wrapper">
+    <video id="webcam" autoplay playsinline></video>
+    <div id="debug-info">Initializing...</div>
+</div>
+<div class="slideshow-controls">
+    <label>⏱️</label>
+    <input type="number" id="slideshow-interval-input" min="1" max="60" value="5" title="Thời gian mỗi ảnh (giây)">
+    <label>s</label>
+</div>
+<button id="slideshow-btn" class="slideshow-btn" title="Tự động xem ảnh (Slideshow)">▶️</button>
+<button id="help-btn" class="help-btn" title="Hướng dẫn sử dụng">?</button>
+<button id="audio-toggle-btn" class="audio-btn" title="Bật/Tắt nhạc nền">🔊</button>
+<audio id="background-music" loop>
+    <source src="audio.mp3" type="audio/mpeg">
+</audio>
+<div id="help-overlay"></div>
+<div id="help-dialog">
+    <span class="close-btn" id="close-help">×</span>
+    <h2>🌿 Hướng Dẫn Sử Dụng</h2>
+    
+    <div class="help-section">
+        <h3>👋 Cử Chỉ Tay (AI Hand Tracking)</h3>
+        <div class="help-item">
+            <div class="help-icon">✋</div>
+            <div class="help-content">
+                <div class="help-title">Xòe Tay (5 ngón)</div>
+                <div class="help-desc">Lá bay tứ tung - chuyển sang chế độ SCATTER để xem tất cả ảnh</div>
+            </div>
+        </div>
+        <div class="help-item">
+            <div class="help-icon">✊</div>
+            <div class="help-content">
+                <div class="help-title">Nắm Tay (Đấm)</div>
+                <div class="help-desc">Lá về cây - quay lại chế độ TREE với ảnh treo trên cây</div>
+            </div>
+        </div>
+        <div class="help-item">
+            <div class="help-icon">🔄</div>
+            <div class="help-content">
+                <div class="help-title">Xoay Tay Trái/Phải (Xòe bàn tay)</div>
+                <div class="help-desc">Xòe bàn tay và di chuyển trái/phải để xoay cây và ảnh (chế độ SCATTER)</div>
+            </div>
+        </div>
+        <div class="help-item">
+            <div class="help-icon">🤏</div>
+            <div class="help-content">
+                <div class="help-title">Pinch (Ngón cái + trỏ chụm lại)</div>
+                <div class="help-desc">Phóng to ảnh đang focus - giữ pinch để xem chi tiết</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="help-section">
+        <h3>🖱️ Chuột & Bàn Phím</h3>
+        <div class="help-item">
+            <div class="help-icon">🖱️</div>
+            <div class="help-content">
+                <div class="help-title">Click Chuột</div>
+                <div class="help-desc">Click vào ảnh để phóng to | Click vào chỗ trống để thu nhỏ</div>
+            </div>
+        </div>
+        <div class="help-item">
+            <div class="help-icon">🖱️</div>
+            <div class="help-content">
+                <div class="help-title">Lăn Chuột (Scroll)</div>
+                <div class="help-desc">Lăn lên = SCATTER mode | Lăn xuống = TREE mode</div>
+            </div>
+        </div>
+        <div class="help-item">
+            <div class="help-icon">⌨️</div>
+            <div class="help-content">
+                <div class="help-title">Phím Mũi Tên ← →</div>
+                <div class="help-desc"><span class="help-key">←</span> Ảnh trước | <span class="help-key">→</span> Ảnh sau (chuyển chính xác từng ảnh)</div>
+            </div>
+        </div>
+        <div class="help-item">
+            <div class="help-icon">⌨️</div>
+            <div class="help-content">
+                <div class="help-title">Phím Mũi Tên ↑ ↓</div>
+                <div class="help-desc"><span class="help-key">↑</span> Xòe cây (SCATTER) | <span class="help-key">↓</span> Thu cây (TREE)</div>
+            </div>
+        </div>
+        <div class="help-item">
+            <div class="help-icon">⌨️</div>
+            <div class="help-content">
+                <div class="help-title">Enter</div>
+                <div class="help-desc"><span class="help-key">Enter</span> để chọn/bỏ chọn ảnh đang focus (phóng to/thu nhỏ)</div>
+            </div>
+        </div>
+        <div class="help-item">
+            <div class="help-icon">⌨️</div>
+            <div class="help-content">
+                <div class="help-title">Space</div>
+                <div class="help-desc"><span class="help-key">Space</span> để chọn/bỏ chọn ảnh (giống Enter)</div>
+            </div>
+        </div>
+        <div class="help-item">
+            <div class="help-icon">⌨️</div>
+            <div class="help-content">
+                <div class="help-title">Phím H</div>
+                <div class="help-desc"><span class="help-key">H</span> để ẩn/hiện giao diện và webcam</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="help-section">
+        <h3>📸 Quản Lý Ảnh</h3>
+        <div class="help-item">
+            <div class="help-icon">📁</div>
+            <div class="help-content">
+                <div class="help-title">Tải Album / Chọn Ảnh</div>
+                <div class="help-desc">Click nút ở góc trên bên phải để tải ảnh từ máy tính</div>
+            </div>
+        </div>
+        <div class="help-item">
+            <div class="help-icon">▶️</div>
+            <div class="help-content">
+                <div class="help-title">Slideshow Tự Động</div>
+                <div class="help-desc">Click nút ▶️ để tự động zoom xem từng ảnh (5 giây/ảnh)</div>
+            </div>
+        </div>
+        <div class="help-item">
+            <div class="help-icon">🌄</div>
+            <div class="help-content">
+                <div class="help-title">Ảnh Nền</div>
+                <div class="help-desc">Click nút "Ảnh Nền" để đặt ảnh làm background phía sau (ví dụ: ảnh trường học)</div>
+            </div>
+        </div>
+        <div class="help-item">
+            <div class="help-icon">🗑️</div>
+            <div class="help-content">
+                <div class="help-title">Xóa Tất Cả Ảnh</div>
+                <div class="help-desc">Click nút thùng rác để xóa toàn bộ ảnh và dữ liệu</div>
+            </div>
+        </div>
+    </div>
+
+    <div style="text-align:center; margin-top:25px; padding-top:20px; border-top:1px solid rgba(129,199,132,0.3);">
+        <p style="color:#81c784; font-size:13px; font-style:italic;">
+            💡 Mẹo: Ảnh được lưu tự động trong bộ nhớ trình duyệt
+        </p>
+    </div>
+</div>
+<div id="camera-permission-banner">
+    <div class="camera-icon">🌿</div>
+    <div class="camera-message"><strong>Yêu cầu quyền Camera</strong><span>Để dùng điều khiển cử chỉ tay AI</span></div>
+    <button class="camera-btn" id="request-camera-btn">Cho phép</button>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision';
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+const STATE = {
+    mode:'TREE',
+    hand:{ detected:false, x:0, y:0, ndcX:0, ndcY:0 },
+    rotY:0, rotX:0,
+    hoveredPhoto: -1,   // index into photoObjects
+    selectedPhoto: -1,  // pinch-selected photo (PINCH)
+    lockedPhoto: -1,    // enter/click-selected photo (ENTER/CLICK)
+    focusedPhoto: 0,    // ảnh đang được focus (lướt qua lại)
+    pinchCooldown: 0,   // prevent rapid toggling
+    lastHandX: 0,       // để detect swipe
+    swipeCooldown: 0,   // prevent rapid swipe
+    waveCooldown: 0,    // prevent rapid wave
+    lastWaveTime: 0,    // để detect wave
+    autoSlideshow: false,  // Chế độ slideshow tự động
+    slideshowTimer: 0,     // Đếm thời gian cho slideshow
+    slideshowInterval: 5,  // 5 giây mỗi ảnh
+    slideshowJustChanged: false, // Flag: slideshow vừa chuyển ảnh, cần zoom ngay
+};
+const clock  = new THREE.Clock();
+const debugEl = document.getElementById('debug-info');
+
+// ─── SCENE GLOBALS ───────────────────────────────────────────────────────────
+let scene, camera, renderer, composer;
+let treeGroup;          // entire tree (trunk+branches+roots)
+let leafInstances;      // InstancedMesh for 50k leaves
+let leafData = [];      // per-leaf animation data
+let scatterLeafData = [];
+let photoObjects = [];  // { group, stringMesh, swingPhase, swingAmp, posTree, posScatter }
+let floatingParticles;  // ambient dust/pollen
+let handLandmarker, video;
+
+// ─── LEAF TEXTURE ─────────────────────────────────────────────────────────────
+function makeLeafTexture() {
+    const c = document.createElement('canvas');
+    c.width = 128; c.height = 128;
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0,0,128,128);
+
+    // Leaf shape – pointed oval
+    ctx.save();
+    ctx.translate(64,64);
+    const g = ctx.createRadialGradient(0,-10,2,0,0,55);
+    // Màu xanh lục ĐẬM hơn: từ (180,230,100) → (120,180,60)
+    g.addColorStop(0,'rgba(120,180,60,1)');
+    // Màu giữa ĐẬM hơn: từ (100,185,60) → (60,140,40)
+    g.addColorStop(0.4,'rgba(60,140,40,1)');
+    // Màu rìa ĐẬM hơn: từ (40,110,30) → (30,80,20)
+    g.addColorStop(1,'rgba(30,80,20,0.0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(0,-54);
+    ctx.bezierCurveTo(28,-30, 32, 20, 0, 54);
+    ctx.bezierCurveTo(-32, 20,-28,-30, 0,-54);
+    ctx.closePath();
+    ctx.fill();
+
+    // midrib - ĐẬM hơn
+    ctx.strokeStyle='rgba(20,60,15,0.6)';
+    ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(0,-50); ctx.lineTo(0,50); ctx.stroke();
+    // veins - ĐẬM hơn
+    ctx.lineWidth=0.7; ctx.strokeStyle='rgba(20,60,15,0.3)';
+    for(let i=-4;i<=4;i++){
+        const y=i*10;
+        ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(i>0?26:-26,y+8); ctx.stroke();
+    }
+    ctx.restore();
+    return new THREE.CanvasTexture(c);
+}
+
+// ─── BARK TEXTURE ─────────────────────────────────────────────────────────────
+function makeBarkTexture() {
+    const c = document.createElement('canvas');
+    c.width = 256; c.height = 512;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle='#2a1505';
+    ctx.fillRect(0,0,256,512);
+    // vertical streaks
+    for(let i=0;i<80;i++){
+        const x=Math.random()*256;
+        const w=1+Math.random()*3;
+        const bright=Math.random()<0.5;
+        ctx.fillStyle=bright?`rgba(80,45,15,${0.3+Math.random()*0.4})`:`rgba(10,5,2,${0.2+Math.random()*0.3})`;
+        ctx.fillRect(x,0,w,512);
+    }
+    // horizontal cracks
+    for(let i=0;i<30;i++){
+        const y=Math.random()*512;
+        ctx.strokeStyle=`rgba(10,5,2,${0.3+Math.random()*0.4})`;
+        ctx.lineWidth=0.5+Math.random()*1.5;
+        ctx.beginPath(); ctx.moveTo(0,y);
+        for(let x=0;x<256;x+=20) ctx.lineTo(x,y+(Math.random()-0.5)*6);
+        ctx.stroke();
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS=t.wrapT=THREE.RepeatWrapping;
+    t.repeat.set(2,4);
+    return t;
+}
+
+// ─── GROUND TEXTURE ───────────────────────────────────────────────────────────
+function makeGroundTexture() {
+    const c = document.createElement('canvas');
+    c.width=512; c.height=512;
+    const ctx=c.getContext('2d');
+    const g=ctx.createRadialGradient(256,256,10,256,256,256);
+    g.addColorStop(0,'#3a6b1a'); g.addColorStop(0.5,'#2d5512'); g.addColorStop(1,'#1a3308');
+    ctx.fillStyle=g; ctx.fillRect(0,0,512,512);
+    for(let i=0;i<2000;i++){
+        ctx.fillStyle=`rgba(${20+Math.random()*40},${60+Math.random()*60},${10+Math.random()*20},0.4)`;
+        ctx.fillRect(Math.random()*512,Math.random()*512,2,2);
+    }
+    const t=new THREE.CanvasTexture(c);
+    t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(3,3);
+    return t;
+}
+
+// ─── BUILD TREE ───────────────────────────────────────────────────────────────
+function buildTree() {
+    treeGroup = new THREE.Group();
+    scene.add(treeGroup);
+
+    const barkTex = makeBarkTexture();
+    const barkMat = new THREE.MeshStandardMaterial({
+        map: barkTex, color:0x3d1f08, roughness:1.0, metalness:0.0
+    });
+    const darkBarkMat = new THREE.MeshStandardMaterial({
+        map: barkTex, color:0x1a0a03, roughness:1.0, metalness:0.0
+    });
+
+    // ── TRUNK FLARE — wide base that blends trunk into roots ──
+    // Multiple flare rings to create smooth organic transition
+    [
+        { rb:6.5, rt:5.0, h:2.0, y:-12.8 },
+        { rb:5.0, rt:4.2, h:1.8, y:-11.3 },
+        { rb:4.2, rt:3.8, h:1.5, y:-10.0 },
+    ].forEach(f=>{
+        const fGeo = new THREE.CylinderGeometry(f.rt, f.rb, f.h, 16, 3);
+        const fPos = fGeo.attributes.position;
+        for(let i=0;i<fPos.count;i++){
+            const x=fPos.getX(i), y=fPos.getY(i), z=fPos.getZ(i);
+            fPos.setX(i, x + Math.sin(y*2.5+x*0.8)*0.35);
+            fPos.setZ(i, z + Math.cos(y*2.2+z*0.8)*0.28);
+        }
+        fPos.needsUpdate=true; fGeo.computeVertexNormals();
+        const fm = new THREE.Mesh(fGeo, darkBarkMat);
+        fm.position.y = f.y; fm.castShadow=true;
+        treeGroup.add(fm);
+    });
+
+    // ── TRUNK (tapered, 4 segments with noise) ──
+    const trunkSegs = [
+        { rb:3.8, rt:2.8, h:5.0, y:-9.25, rz:0.05 },  // Start at -9.25 to connect with flare
+        { rb:2.8, rt:2.0, h:5.0, y:-4.25, rz:-0.06 },
+        { rb:2.0, rt:1.3, h:5.0, y: 0.75, rz:0.04 },
+        { rb:1.3, rt:0.7, h:4.0, y: 5.75, rz:0.02 },
+    ];
+    trunkSegs.forEach(s => {
+        const geo = new THREE.CylinderGeometry(s.rt, s.rb, s.h, 14, 5);
+        const pos = geo.attributes.position;
+        for(let i=0;i<pos.count;i++){
+            const x=pos.getX(i), y=pos.getY(i), z=pos.getZ(i);
+            pos.setX(i, x + Math.sin(y*1.8+x*0.5)*0.22);
+            pos.setZ(i, z + Math.cos(y*1.5+z*0.5)*0.18);
+        }
+        pos.needsUpdate=true; geo.computeVertexNormals();
+        const m=new THREE.Mesh(geo,barkMat);
+        m.position.y=s.y; m.rotation.z=s.rz;
+        m.castShadow=true; m.receiveShadow=true;
+        treeGroup.add(m);
+    });
+
+    // ── ROOTS REMOVED ──
+    // (No roots for cleaner look)
+
+    // ── BRANCHES — start from trunk surface, seamlessly connected ──
+    const branchDefs = [
+        { y:-2, a:0.4,  l:16, th:0.80, lift:0.38 },
+        { y:-1, a:3.2,  l:17, th:0.85, lift:0.35 },
+        { y: 1, a:1.6,  l:15, th:0.65, lift:0.42 },
+        { y: 2, a:4.8,  l:14, th:0.60, lift:0.40 },
+        { y: 4, a:2.7,  l:13, th:0.50, lift:0.46 },
+        { y: 6, a:0.2,  l:11, th:0.42, lift:0.52 },
+        { y: 7, a:3.9,  l: 9, th:0.32, lift:0.58 },
+    ];
+    CONFIG_branchTips = [];
+    branchDefs.forEach(b=>{
+        // Start from trunk surface (radius varies by height)
+        const trunkRadius = 3.8 - (b.y + 9.25) * 0.25; // Approximate trunk radius at height
+        const sx=Math.cos(b.a)*trunkRadius, sz=Math.sin(b.a)*trunkRadius;
+        const mx=Math.cos(b.a)*b.l*0.5, mz=Math.sin(b.a)*b.l*0.5;
+        const my=b.y+b.l*b.lift;
+        const ex=Math.cos(b.a)*b.l, ez=Math.sin(b.a)*b.l;
+        const ey=b.y+b.l*b.lift*0.25;
+        const curve=new THREE.CatmullRomCurve3([
+            new THREE.Vector3(sx,b.y,sz),
+            new THREE.Vector3(mx,my,mz),
+            new THREE.Vector3(ex,ey,ez),
+        ]);
+        const geo=new THREE.TubeGeometry(curve,14,b.th,8,false);
+        const m=new THREE.Mesh(geo,barkMat);
+        m.castShadow=true; treeGroup.add(m);
+        CONFIG_branchTips.push(new THREE.Vector3(ex,ey,ez));
+
+        // sub-branches
+        [0.55,0.75,0.9].forEach((t,idx)=>{
+            const pt=curve.getPoint(t);
+            const sa=b.a+(idx===0?0.8:idx===1?-0.7:0.3)+(Math.random()-0.5)*0.4;
+            const sl=b.l*(0.35+idx*0.05);
+            const slift=b.l*b.lift*0.3;
+            const sc=new THREE.CatmullRomCurve3([
+                pt.clone(),
+                new THREE.Vector3(pt.x+Math.cos(sa)*sl*0.5,pt.y+slift,pt.z+Math.sin(sa)*sl*0.5),
+                new THREE.Vector3(pt.x+Math.cos(sa)*sl,pt.y+slift*0.5,pt.z+Math.sin(sa)*sl),
+            ]);
+            const sg=new THREE.TubeGeometry(sc,8,b.th*0.32,6,false);
+            treeGroup.add(new THREE.Mesh(sg,barkMat));
+            CONFIG_branchTips.push(sc.getPoint(1));
+        });
+    });
+
+    // ── GROUND ──
+    const groundGeo=new THREE.CircleGeometry(26,48);
+    const groundMat=new THREE.MeshStandardMaterial({ map:makeGroundTexture(), roughness:1.0, metalness:0.0 });
+    const ground=new THREE.Mesh(groundGeo,groundMat);
+    ground.rotation.x=-Math.PI/2; ground.position.y=-13.2;
+    ground.receiveShadow=true;
+    treeGroup.add(ground);
+
+    // ── GROUND SHADOW BLOB ──
+    const shadowGeo=new THREE.CircleGeometry(20,32);
+    const shadowMat=new THREE.MeshBasicMaterial({ color:0x000000, transparent:true, opacity:0.15, depthWrite:false });
+    const shadowBlob=new THREE.Mesh(shadowGeo,shadowMat);
+    shadowBlob.rotation.x=-Math.PI/2; shadowBlob.position.y=-13.1;
+    treeGroup.add(shadowBlob);
+}
+
+let CONFIG_branchTips = [];
+
+// ─── INSTANCED LEAVES ─────────────────────────────────────────────────────────
+const LEAF_COUNT = 70000;  // Tăng lên 70k để cây sum suê hơn
+const dummy = new THREE.Object3D();
+
+function buildLeaves() {
+    const leafTex = makeLeafTexture();
+
+    // Use a PlaneGeometry for each leaf (double-sided)
+    const leafGeo = new THREE.PlaneGeometry(1, 1);
+    const leafMat = new THREE.MeshStandardMaterial({
+        map: leafTex,
+        transparent: true,
+        alphaTest: 0.05,
+        side: THREE.DoubleSide,
+        roughness: 0.85,
+        metalness: 0.0,
+        depthWrite: false,
+    });
+
+    leafInstances = new THREE.InstancedMesh(leafGeo, leafMat, LEAF_COUNT);
+    leafInstances.castShadow = false;
+    leafInstances.receiveShadow = false;
+    scene.add(leafInstances);
+
+    // Color palette – bright fresh greens like grass, with yellow flowers
+    const palette = [
+        new THREE.Color(0x7cb342), // fresh lime green
+        new THREE.Color(0x8bc34a), // bright grass green
+        new THREE.Color(0x9ccc65), // light lime
+        new THREE.Color(0xaed581), // pale lime
+        new THREE.Color(0x66bb6a), // vivid green
+        new THREE.Color(0x81c784), // light green
+        new THREE.Color(0x4caf50), // medium green
+        new THREE.Color(0x7cb342), // lime (repeat for higher probability)
+        new THREE.Color(0x8bc34a), // grass (repeat)
+        new THREE.Color(0x9ccc65), // light lime (repeat)
+        new THREE.Color(0x558b2f), // darker accent
+        new THREE.Color(0x689f38), // olive green
+        // Thêm lá màu mùa thu
+        new THREE.Color(0xffb74d), // cam nhạt
+        new THREE.Color(0xffa726), // cam
+        new THREE.Color(0xff9800), // cam đậm
+        new THREE.Color(0xffd54f), // vàng nhạt
+        new THREE.Color(0xffca28), // vàng
+        new THREE.Color(0xef5350), // đỏ hồng
+        new THREE.Color(0xe57373), // hồng nhạt
+        new THREE.Color(0xf06292), // hồng
+    ];
+    const flowerColors = [
+        new THREE.Color(0xffd54f), // golden yellow
+        new THREE.Color(0xffeb3b), // bright yellow
+        new THREE.Color(0xfff176), // light yellow
+        new THREE.Color(0xffca28), // amber
+        new THREE.Color(0xffa726), // orange
+        new THREE.Color(0xffb74d), // light orange
+        // Thêm hoa màu sắc
+        new THREE.Color(0xff4081), // hồng chói
+        new THREE.Color(0xf50057), // hồng đậm
+        new THREE.Color(0xe91e63), // hồng
+        new THREE.Color(0xec407a), // hồng nhạt
+        new THREE.Color(0xba68c8), // tím nhạt
+        new THREE.Color(0xab47bc), // tím
+        new THREE.Color(0x9c27b0), // tím đậm
+        new THREE.Color(0xff6f00), // cam đậm
+        new THREE.Color(0xff9100), // cam vàng
+    ];
+    const whiteSparkles = [
+        new THREE.Color(0xffffff), // pure white
+        new THREE.Color(0xf5f5f5), // snow white
+        new THREE.Color(0xfafafa), // bright white
+        new THREE.Color(0xe8f5e9), // light mint white
+    ];
+
+    leafData = [];
+    scatterLeafData = [];
+
+    // Canopy shape: NATURAL wild ancient tree — irregular, bushy, organic
+    const lobes = [
+        // Core massive canopy — wide and irregular
+        { cx: 0,   cy: 6,   cz: 0,   rx:24,  ry: 6,  rz:24,  weight:0.25 },
+        { cx: 0,   cy: 4,   cz: 0,   rx:20,  ry: 5,  rz:20,  weight:0.15 },
+        // Asymmetric side bulges — natural wild growth
+        { cx:14,   cy: 5,   cz: 6,   rx:10,  ry: 5,  rz:10,  weight:0.08 },
+        { cx:-12,  cy: 6,   cz:-8,   rx:11,  ry: 6,  rz:11,  weight:0.08 },
+        { cx: 8,   cy: 7,   cz:-14,  rx: 9,  ry: 5,  rz: 9,  weight:0.06 },
+        { cx:-10,  cy: 4,   cz: 12,  rx:10,  ry: 5,  rz:10,  weight:0.06 },
+        // Upper irregular crown — bushy top
+        { cx: 3,   cy: 9,   cz:-2,   rx:12,  ry: 5,  rz:12,  weight:0.07 },
+        { cx:-4,   cy:10,   cz: 3,   rx:10,  ry: 4,  rz:10,  weight:0.05 },
+        // Mid-level dense fill — hide branches
+        { cx: 6,   cy: 3,   cz: 8,   rx: 9,  ry: 4,  rz: 9,  weight:0.04 },
+        { cx:-8,   cy: 2,   cz:-6,   rx: 9,  ry: 4,  rz: 9,  weight:0.04 },
+        // Lower hanging clusters — natural droop
+        { cx:10,   cy: 1,   cz:-4,   rx: 7,  ry: 3,  rz: 7,  weight:0.03 },
+        { cx:-9,   cy: 0,   cz: 9,   rx: 7,  ry: 3,  rz: 7,  weight:0.03 },
+        // Outer wisps — ragged natural edge
+        { cx:18,   cy: 3,   cz: 4,   rx: 6,  ry: 3,  rz: 6,  weight:0.02 },
+        { cx:-17,  cy: 4,   cz:-5,   rx: 6,  ry: 3,  rz: 6,  weight:0.02 },
+        { cx: 5,   cy: 2,   cz:17,   rx: 6,  ry: 3,  rz: 6,  weight:0.02 },
+    ];
+    // Normalize weights
+    const totalW = lobes.reduce((s,l)=>s+l.weight,0);
+    lobes.forEach(l=>l.weight/=totalW);
+
+    function sampleLobe() {
+        let r=Math.random(), acc=0;
+        for(const l of lobes){ acc+=l.weight; if(r<=acc) return l; }
+        return lobes[0];
+    }
+
+    for(let i=0;i<LEAF_COUNT;i++){
+        // Position inside a lobe
+        const lobe = sampleLobe();
+        let px,py,pz,d;
+        do {
+            px=(Math.random()*2-1)*lobe.rx;
+            py=(Math.random()*2-1)*lobe.ry;
+            pz=(Math.random()*2-1)*lobe.rz;
+            d=(px*px)/(lobe.rx*lobe.rx)+(py*py)/(lobe.ry*lobe.ry)+(pz*pz)/(lobe.rz*lobe.rz);
+        } while(d>1);
+
+        const treePos = new THREE.Vector3(lobe.cx+px, lobe.cy+py, lobe.cz+pz);
+
+        // Scatter position — fly from center outward (10-100)
+        const sTheta = Math.random()*Math.PI*2;
+        const sr = 10 + Math.random()*90;    // radius 10–100 (from center to edge)
+        const sy = (Math.random()-0.5)*70;  // height -35 to +35
+        const scatterPos = new THREE.Vector3(
+            sr*Math.cos(sTheta),
+            sy,
+            sr*Math.sin(sTheta)
+        );
+
+        // Random rotation
+        const rx = Math.random()*Math.PI*2;
+        const ry = Math.random()*Math.PI*2;
+        const rz = Math.random()*Math.PI*2;
+
+        // Random scale – white sparkles are LONGER
+        let s;
+        const isWhiteSparkle = Math.random() < 0.10;  // 10% white sparkles
+        if(isWhiteSparkle){
+            s = 0.6 + Math.random()*0.8;  // Longer white leaves
+        } else {
+            s = 0.35 + Math.random()*0.55;  // Normal leaves
+        }
+
+        // Color - mix of green leaves, flowers, and white sparkles
+        let col;
+        if(isWhiteSparkle){
+            col = whiteSparkles[Math.floor(Math.random()*whiteSparkles.length)].clone();
+            col.multiplyScalar(0.95 + Math.random()*0.15);  // Bright and sparkly
+        } else {
+            const rand = Math.random();
+            if(rand < 0.15){
+                // 15% hoa
+                col = flowerColors[Math.floor(Math.random()*flowerColors.length)].clone();
+            } else if(rand < 0.20){
+                // 5% lá mùa thu (cam, vàng, đỏ)
+                const autumnColors = [
+                    new THREE.Color(0xffb74d), // cam nhạt
+                    new THREE.Color(0xffa726), // cam
+                    new THREE.Color(0xff9800), // cam đậm
+                    new THREE.Color(0xffd54f), // vàng nhạt
+                    new THREE.Color(0xffca28), // vàng
+                    new THREE.Color(0xef5350), // đỏ hồng
+                    new THREE.Color(0xe57373), // hồng nhạt
+                    new THREE.Color(0xf06292), // hồng
+                ];
+                col = autumnColors[Math.floor(Math.random()*autumnColors.length)].clone();
+            } else {
+                // 70% lá xanh
+                const greenColors = [
+                    new THREE.Color(0x7cb342), // fresh lime green
+                    new THREE.Color(0x8bc34a), // bright grass green
+                    new THREE.Color(0x9ccc65), // light lime
+                    new THREE.Color(0xaed581), // pale lime
+                    new THREE.Color(0x66bb6a), // vivid green
+                    new THREE.Color(0x81c784), // light green
+                    new THREE.Color(0x4caf50), // medium green
+                    new THREE.Color(0x558b2f), // darker accent
+                    new THREE.Color(0x689f38), // olive green
+                ];
+                col = greenColors[Math.floor(Math.random()*greenColors.length)].clone();
+            }
+            // Brightness: keep vibrant and fresh
+            const depthFactor = d;
+            col.multiplyScalar(0.85 + depthFactor*0.25);
+        }
+
+        leafInstances.setColorAt(i, col);
+
+        // Wind phase
+        const windPhase = Math.random()*Math.PI*2;
+        const windAmp   = 0.008 + Math.random()*0.018;
+
+        leafData.push({ treePos, scatterPos, rx, ry, rz, s, windPhase, windAmp, currentPos: treePos.clone(), currentRX:rx, currentRY:ry, currentRZ:rz });
+        scatterLeafData.push({ vx:(Math.random()-0.5)*0.4, vy:(Math.random()-0.5)*0.3, vz:(Math.random()-0.5)*0.4 });
+
+        // Set initial transform
+        dummy.position.copy(treePos);
+        dummy.rotation.set(rx,ry,rz);
+        dummy.scale.setScalar(s);
+        dummy.updateMatrix();
+        leafInstances.setMatrixAt(i, dummy.matrix);
+    }
+    leafInstances.instanceMatrix.needsUpdate = true;
+    leafInstances.instanceColor.needsUpdate  = true;
+}
+
+// ─── FLOATING PARTICLES (pollen/dust) ─────────────────────────────────────────
+function buildFloatingParticles() {
+    const count = 50;  // Giảm từ 100 xuống 50 để mượt hơn
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(count*3);
+    const vel = new Float32Array(count*3);
+    const sizes = new Float32Array(count);
+    const colors = new Float32Array(count*3);
+    
+    for(let i=0;i<count;i++){
+        // Start particles in photo zone
+        pos[i*3]   = (Math.random()-0.5)*30;
+        pos[i*3+1] = Math.random()*25-8;
+        pos[i*3+2] = (Math.random()-0.5)*30;
+        vel[i*3]   = (Math.random()-0.5)*0.02;
+        vel[i*3+1] = -0.01 - Math.random()*0.015;  // Fall down like snow
+        vel[i*3+2] = (Math.random()-0.5)*0.02;
+        
+        // Smaller size
+        sizes[i] = 0.15 + Math.random()*0.2;
+        
+        // Mix of white snow and golden sparkles
+        const isSnow = Math.random() < 0.7;  // 70% snow, 30% sparkles
+        if(isSnow){
+            colors[i*3] = 1.0;     // white
+            colors[i*3+1] = 1.0;
+            colors[i*3+2] = 1.0;
+        } else {
+            colors[i*3] = 1.0;     // golden
+            colors[i*3+1] = 0.95;
+            colors[i*3+2] = 0.7;
+        }
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+    geo.setAttribute('velocity', new THREE.BufferAttribute(vel,3));
+    geo.setAttribute('size', new THREE.BufferAttribute(sizes,1));
+    geo.setAttribute('color', new THREE.BufferAttribute(colors,3));
+
+    const mat = new THREE.PointsMaterial({
+        size: 0.2,
+        transparent: true,
+        opacity: 0.7,
+        vertexColors: true,
+        sizeAttenuation: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
+    floatingParticles = new THREE.Points(geo,mat);
+    scene.add(floatingParticles);
+}
+
+function updateFloatingParticles() {
+    if(!floatingParticles) return;
+    const pos = floatingParticles.geometry.attributes.position.array;
+    const vel = floatingParticles.geometry.attributes.velocity.array;
+    const t = clock.elapsedTime;
+    
+    for(let i=0;i<pos.length/3;i++){
+        // Gentle swaying motion like snow
+        pos[i*3]   += vel[i*3]   + Math.sin(t*0.8+i)*0.004;
+        pos[i*3+1] += vel[i*3+1];
+        pos[i*3+2] += vel[i*3+2] + Math.cos(t*0.6+i)*0.004;
+        
+        // Reset when particle falls below ground
+        if(pos[i*3+1] < -15){
+            pos[i*3+1] = 25;
+            pos[i*3]   = (Math.random()-0.5)*30;
+            pos[i*3+2] = (Math.random()-0.5)*30;
+        }
+    }
+    floatingParticles.geometry.attributes.position.needsUpdate=true;
+}
+
+// ─── PHOTO SYSTEM ─────────────────────────────────────────────────────────────
+const photoGroup = new THREE.Group();
+
+function addPhotoToScene(texture) {
+    const aspect = texture.image ? texture.image.width/texture.image.height : 1;
+    const pw = 1.6 + Math.random()*0.8;
+    const ph = pw / aspect;
+
+    // Frame (box for 3D depth)
+    const frameGeo = new THREE.BoxGeometry(pw+0.18, ph+0.18, 0.04);
+    const frameMat = new THREE.MeshStandardMaterial({ color:0xfafafa, roughness:0.3, metalness:0.0 });
+    const frame = new THREE.Mesh(frameGeo, frameMat);
+    frame.castShadow = true;
+
+    // Photo front side
+    const photoGeo = new THREE.PlaneGeometry(pw, ph);
+    const photoMat = new THREE.MeshBasicMaterial({ map:texture });
+    const photoFront = new THREE.Mesh(photoGeo, photoMat);
+    photoFront.position.z = 0.03;
+
+    // Photo back side (same image)
+    const photoBack = new THREE.Mesh(photoGeo, photoMat.clone());
+    photoBack.position.z = -0.03;
+    photoBack.rotation.y = Math.PI;  // Flip to face backward
+
+    const photoCard = new THREE.Group();
+    photoCard.add(frame);
+    photoCard.add(photoFront);
+    photoCard.add(photoBack);
+
+    // String (thin line from top of photo upward)
+    const ropeLen = 1.5 + Math.random()*3.5;
+    const ropeGeo = new THREE.BufferGeometry();
+    ropeGeo.setAttribute('position', new THREE.Float32BufferAttribute([0,ph/2+0.1,0, 0,ph/2+0.1+ropeLen,0],3));
+    const ropeMat = new THREE.LineBasicMaterial({ color:0xccccaa, transparent:true, opacity:0.7 });
+    const rope = new THREE.Line(ropeGeo, ropeMat);
+    photoCard.add(rope);
+
+    const group = new THREE.Group();
+    group.add(photoCard);
+    photoGroup.add(group);
+
+    // Scatter position
+    const sr = 20 + Math.random()*30;
+    const sTheta = Math.random()*Math.PI*2;
+    const sPhi   = Math.acos(2*Math.random()-1);
+    const scatterPos = new THREE.Vector3(
+        sr*Math.sin(sPhi)*Math.cos(sTheta),
+        sr*Math.sin(sPhi)*Math.sin(sTheta),
+        sr*Math.cos(sPhi)
+    );
+
+    photoObjects.push({
+        group,
+        swingPhase: Math.random()*Math.PI*2,
+        swingAmp:   0.04 + Math.random()*0.08,
+        ropeLen,
+        posTree: new THREE.Vector3(),   // filled by layoutPhotos
+        posScatter: new THREE.Vector3(), // filled by layoutPhotos too
+        currentPos: new THREE.Vector3(),
+        // Slow cinematic drift speeds for scatter
+        driftX: (Math.random()-0.5)*0.8,
+        driftY: (Math.random()-0.5)*0.4,
+        driftZ: (Math.random()-0.5)*0.8,
+        driftPhase: Math.random()*Math.PI*2,
+    });
+
+    layoutPhotos();
+}
+
+function layoutPhotos() {
+    const count = photoObjects.length;
+    if(count===0) return;
+    photoObjects.forEach((p,i)=>{
+        const angle = (i/count)*Math.PI*2 + 0.5;
+        // Hang under canopy — varied radius and depth
+        const r = 2.5 + (i%4)*2.2 + Math.random()*1.2;
+        const clampR = Math.min(r, 10);
+        const x = Math.cos(angle)*clampR;
+        const z = Math.sin(angle)*clampR;
+        const y = -1.5 - (i%5)*1.4 - Math.random()*2;
+        p.posTree.set(x, y, z);
+        if(p.currentPos.lengthSq()===0) p.currentPos.copy(p.posTree);
+
+        // Scatter: float around tree center — interleaved with leaves
+        const sa = angle + (Math.random()-0.5)*1.2;
+        const sr = 6 + Math.random()*14;  // radius 6-20 (same zone as leaves)
+        // Vary depth for natural 3D distribution
+        const depthBias = (Math.random()-0.5)*12;
+        const sy = (Math.random()-0.5)*16;  // height -8 to +8 (mix with leaves)
+        p.posScatter.set(
+            Math.cos(sa)*sr,
+            sy,
+            Math.sin(sa)*sr + depthBias
+        );
+    });
+}
+
+// ─── STRING LINES (sparkle threads from photos to canopy) ─────────────────────
+let stringLines = [];
+
+function rebuildStringLines() {
+    stringLines.forEach(l=>scene.remove(l));
+    stringLines = [];
+    photoObjects.forEach(p=>{
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.Float32BufferAttribute([0,0,0,0,0,0],3));
+        const mat = new THREE.LineBasicMaterial({
+            color:0xffffff, transparent:true, opacity:0,
+            blending:THREE.AdditiveBlending, depthWrite:false
+        });
+        const line = new THREE.Line(geo,mat);
+        scene.add(line);
+        stringLines.push(line);
+        p._stringLine = line;
+    });
+}
+
+function updateStringLines(mode) {
+    const isTree = mode==='TREE';
+    const t = clock.elapsedTime;
+    photoObjects.forEach((p,i)=>{
+        const line = p._stringLine;
+        if(!line) return;
+        const mat = line.material;
+        mat.opacity += (isTree?1:-1)*0.025;
+        mat.opacity = Math.max(0, Math.min(0.65, mat.opacity));
+        if(mat.opacity>0.01){
+            const sparkle = 0.25 + 0.4*Math.abs(Math.sin(t*2.5+i*0.7));
+            mat.opacity = isTree ? sparkle : mat.opacity;
+            const wp = new THREE.Vector3();
+            p.group.getWorldPosition(wp);
+            // anchor on canopy
+            const anchor = new THREE.Vector3(
+                Math.cos(i*1.3)*5,
+                4 + Math.sin(i*0.9)*3,
+                Math.sin(i*1.3)*5
+            );
+            const pa = line.geometry.attributes.position.array;
+            pa[0]=wp.x; pa[1]=wp.y+p.ropeLen*0.5; pa[2]=wp.z;
+            pa[3]=anchor.x; pa[4]=anchor.y; pa[5]=anchor.z;
+            line.geometry.attributes.position.needsUpdate=true;
+        }
+    });
+}
+
+// ─── LEAF ANIMATION ───────────────────────────────────────────────────────────
+const _lerpVec = new THREE.Vector3();
+const _mat4    = new THREE.Matrix4();
+
+function updateLeaves(dt) {
+    if(!leafInstances) return;
+    const t = clock.elapsedTime;
+    const isScatter = STATE.mode==='SCATTER';
+    // Slow graceful expansion, snappy elegant return
+    const lerpSpeed = isScatter ? 1.4 : 2.2;
+
+    for(let i=0;i<LEAF_COUNT;i++){
+        const ld = leafData[i];
+        const target = isScatter ? ld.scatterPos : ld.treePos;
+
+        ld.currentPos.lerp(target, lerpSpeed*dt);
+
+        let rx=ld.currentRX, ry=ld.currentRY, rz=ld.currentRZ;
+
+        if(isScatter){
+            // LÁ BAY ĐỘNG - xoay và di chuyển liên tục
+            ld.currentRX += scatterLeafData[i].vx * dt * 2.5; // Tăng tốc độ xoay
+            ld.currentRY += scatterLeafData[i].vy * dt * 2.5;
+            ld.currentRZ += scatterLeafData[i].vz * dt * 2.5;
+            
+            // Thêm chuyển động bay lượn (drift)
+            const driftSpeed = 0.3;
+            const driftX = Math.sin(t * 0.5 + i * 0.1) * driftSpeed;
+            const driftY = Math.cos(t * 0.4 + i * 0.15) * driftSpeed * 0.5;
+            const driftZ = Math.sin(t * 0.6 + i * 0.12) * driftSpeed;
+            
+            ld.currentPos.x += driftX * dt * 10;
+            ld.currentPos.y += driftY * dt * 10;
+            ld.currentPos.z += driftZ * dt * 10;
+            
+            rx=ld.currentRX; ry=ld.currentRY; rz=ld.currentRZ;
+        } else {
+            // Gentle wind sway on tree
+            const sway = Math.sin(t*1.2 + ld.windPhase) * ld.windAmp;
+            rx = ld.rx + sway;
+            rz = ld.rz + sway*0.5;
+            ld.currentRX = THREE.MathUtils.lerp(ld.currentRX, rx, 2.5*dt);
+            ld.currentRY = THREE.MathUtils.lerp(ld.currentRY, ld.ry, 1.8*dt);
+            ld.currentRZ = THREE.MathUtils.lerp(ld.currentRZ, rz, 2.5*dt);
+            rx=ld.currentRX; ry=ld.currentRY; rz=ld.currentRZ;
+        }
+
+        dummy.position.copy(ld.currentPos);
+        dummy.rotation.set(rx,ry,rz);
+        dummy.scale.setScalar(ld.s);
+        dummy.updateMatrix();
+        leafInstances.setMatrixAt(i, dummy.matrix);
+    }
+    leafInstances.instanceMatrix.needsUpdate = true;
+}
+
+// ─── PHOTO ANIMATION ──────────────────────────────────────────────────────────
+function updatePhotos(dt) {
+    const t = clock.elapsedTime;
+    const isScatter = STATE.mode==='SCATTER';
+
+    photoObjects.forEach((p,i)=>{
+        const isHovered  = (STATE.hoveredPhoto  === i);
+        const isSelectedByPinch = (STATE.selectedPhoto === i);  // Pinch
+        const isSelectedByClick = (STATE.lockedPhoto === i);     // Enter/Click
+        const isSelected = isSelectedByPinch || isSelectedByClick; // Bất kỳ cái nào
+        const isFocused  = (STATE.focusedPhoto  === i); // Ảnh đang được focus
+        
+        // DEBUG: Log khi slideshow bật và ảnh được selected
+        if(STATE.autoSlideshow && isSelected && Math.floor(t * 10) % 30 === 0){
+            console.log(`🎬 Slideshow: Ảnh #${i} isSelected=${isSelected}, lockedPhoto=${STATE.lockedPhoto}`);
+        }
+
+        // ── Position target ──
+        let target = isScatter ? p.posScatter : p.posTree;
+
+        // Selected photo comes DIRECTLY in front of camera (not blocked by anything)
+        if(isSelected){
+            // Tính vị trí trong LOCAL space của photoGroup (không bị ảnh hưởng bởi rotation)
+            const camPos = new THREE.Vector3();
+            camera.getWorldPosition(camPos);
+            const camDir = new THREE.Vector3(0, 0, -1);
+            camDir.applyQuaternion(camera.quaternion);
+            
+            // Vị trí world space
+            const worldTarget = camPos.clone().add(camDir.multiplyScalar(12));
+            
+            // Chuyển về local space của photoGroup
+            const localTarget = photoGroup.worldToLocal(worldTarget.clone());
+            target = localTarget;
+        }
+
+        const lerpSpeed = isSelected ? 4.5 : (isScatter ? 0.7 : 1.4);
+        p.currentPos.lerp(target, lerpSpeed*dt);
+
+        if(isSelected){
+            // Selected photo: position in front of camera, LUÔN QUAY THẲNG VỀ CAMERA
+            p.group.position.copy(p.currentPos);
+            
+            // Tính rotation để ảnh quay thẳng về camera (bỏ qua rotation của photoGroup)
+            const camPos = new THREE.Vector3();
+            camera.getWorldPosition(camPos);
+            
+            // Lấy world position của ảnh
+            const photoWorldPos = new THREE.Vector3();
+            p.group.getWorldPosition(photoWorldPos);
+            
+            // Vector từ ảnh đến camera
+            const dirToCamera = new THREE.Vector3().subVectors(camPos, photoWorldPos).normalize();
+            
+            // Tính rotation để ảnh quay về camera (trong local space của photoGroup)
+            // Chuyển dirToCamera về local space
+            const localDir = dirToCamera.clone();
+            localDir.applyQuaternion(photoGroup.quaternion.clone().invert());
+            
+            // Tính góc quay
+            const targetRotY = Math.atan2(localDir.x, localDir.z);
+            const targetRotX = -Math.asin(localDir.y);
+            
+            // Lerp rotation mượt mà
+            p.group.rotation.y = THREE.MathUtils.lerp(p.group.rotation.y, targetRotY, 8*dt);
+            p.group.rotation.x = THREE.MathUtils.lerp(p.group.rotation.x, targetRotX, 8*dt);
+            p.group.rotation.z = THREE.MathUtils.lerp(p.group.rotation.z, 0, 8*dt);
+        } else if(isScatter){
+            // Slow cinematic orbital drift around tree
+            const driftT = t*0.25 + p.driftPhase;
+            p.group.position.set(
+                p.currentPos.x + Math.sin(driftT)*0.8,
+                p.currentPos.y + Math.sin(driftT*0.6)*0.5,
+                p.currentPos.z + Math.cos(driftT*0.8)*0.6
+            );
+            const targetRZ = Math.sin(driftT*0.5)*0.12;
+            const targetRX = Math.cos(driftT*0.4)*0.06;
+            p.group.rotation.z = THREE.MathUtils.lerp(p.group.rotation.z, targetRZ, 1.2*dt);
+            p.group.rotation.x = THREE.MathUtils.lerp(p.group.rotation.x, targetRX, 1.2*dt);
+            p.group.rotation.y = THREE.MathUtils.lerp(p.group.rotation.y, Math.sin(driftT*0.3)*0.08, 0.8*dt);
+        } else {
+            // Tree mode: hanging from tree
+            p.group.position.copy(p.currentPos);
+            // Gentle pendulum swing
+            const swing = Math.sin(t*0.7 + p.swingPhase) * p.swingAmp;
+            p.group.rotation.z = THREE.MathUtils.lerp(p.group.rotation.z, swing, 2.5*dt);
+            p.group.rotation.x = THREE.MathUtils.lerp(p.group.rotation.x, 0, 2*dt);
+            p.group.rotation.y = THREE.MathUtils.lerp(p.group.rotation.y, 0, 2*dt);
+        }
+
+        // ── Scale: Photos bigger in scatter mode, selected is VERY LARGE, focused is highlighted ──
+        let targetScale;
+        if(isSelected){
+            targetScale = 4.5;  // Selected = ZOOM TO
+        } else if(isFocused && isScatter){
+            targetScale = 2.5;  // Focused photo
+        } else if(isScatter){
+            targetScale = 1.5;  // Normal size in scatter mode
+        } else if(isHovered){
+            targetScale = 2.2;  // Hover effect in tree mode - TĂNG từ 1.8 lên 2.2
+        } else {
+            targetScale = 2.0;  // Normal size in tree mode - TĂNG từ 1.5 lên 2.0 (to hơn để thấy rõ)
+        }
+        const curScale = p.group.scale.x;
+        
+        // Lerp speed: NHANH HƠN khi slideshow để zoom ngay lập tức
+        let scaleLerpSpeed = (isSelected && STATE.autoSlideshow) ? 25 : 10;
+        
+        // NẾU slideshow vừa chuyển ảnh → ZOOM NGAY (không lerp)
+        if(isSelected && STATE.slideshowJustChanged && i === STATE.lockedPhoto){
+            p.group.scale.setScalar(targetScale); // Set trực tiếp, không lerp
+            console.log(`⚡ Zoom NGAY ảnh #${i} lên ${targetScale}x (slideshowJustChanged)`);
+        } else {
+            // Lerp bình thường
+            const newScale = THREE.MathUtils.lerp(curScale, targetScale, scaleLerpSpeed*dt);
+            p.group.scale.setScalar(newScale);
+        }
+        
+        // Debug log sau khi tính newScale
+        if(isSelected && Math.floor(t) % 1 === 0 && Math.floor(t * 60) % 60 === 0){
+            console.log(`📸 Ảnh #${i} ĐANG ZOOM | scale: ${newScale.toFixed(2)} → ${targetScale}`);
+        }
+
+        // ── Frame glow: VIỀN SÁNG cho ảnh focused ──
+        const photoCard = p.group.children[0];
+        if(photoCard && photoCard.children[0]){
+            const frameMesh = photoCard.children[0];
+            if(frameMesh.material){
+                let targetEmissive = 0.0;
+                let emissiveColor = new THREE.Color(0xffd700);
+                
+                if(isSelected){
+                    targetEmissive = 0.5; // Selected = sáng nhất
+                    emissiveColor = new THREE.Color(0xffffff); // Trắng
+                } else if(isFocused && isScatter){
+                    // Focused = NHẤP NHÁY VÀNG (dễ thấy nhất)
+                    const pulse = 0.5 + 0.5 * Math.sin(t * 4); // Nhấp nháy nhanh
+                    targetEmissive = 0.6 + pulse * 0.4; // 0.6 - 1.0
+                    emissiveColor = new THREE.Color(0xffff00); // Vàng chói
+                } else if(isHovered){
+                    targetEmissive = 0.3;
+                    emissiveColor = new THREE.Color(0xffd700); // Vàng nhạt
+                }
+                
+                frameMesh.material.emissiveIntensity = THREE.MathUtils.lerp(
+                    frameMesh.material.emissiveIntensity || 0,
+                    targetEmissive, 10*dt // Faster glow
+                );
+                frameMesh.material.emissive = emissiveColor;
+            }
+        }
+    });
+    
+    // Reset flag SAU khi đã xử lý tất cả ảnh
+    if(STATE.slideshowJustChanged){
+        STATE.slideshowJustChanged = false;
+    }
+}
+
+// ─── INIT THREE ───────────────────────────────────────────────────────────────
+function initThree() {
+    const container = document.getElementById('canvas-container');
+    scene = new THREE.Scene();
+    // Gradient sky mặc định (sẽ bị thay thế khi có ảnh nền)
+    scene.background = new THREE.Color(0xb8e6f5);
+    scene.fog = new THREE.FogExp2(0xd0e8f5, 0.004); // Sương mù nhẹ hơn
+
+    camera = new THREE.PerspectiveCamera(42, innerWidth/innerHeight, 0.1, 800);
+    camera.position.set(0, 3, 62);
+
+    try {
+        renderer = new THREE.WebGLRenderer({ 
+            antialias: false,  // Tắt để tăng hiệu suất
+            powerPreference: 'high-performance',
+            failIfMajorPerformanceCaveat: false,
+            stencil: false,  // Tắt stencil buffer
+            depth: true,
+            alpha: true  // Cho phép trong suốt để hiện background
+        });
+        renderer.setSize(innerWidth, innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));  // Giới hạn pixel ratio
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.BasicShadowMap;  // Dùng BasicShadowMap thay vì PCFSoft
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.1;  // TĂNG từ 0.9 lên 1.1 (vừa phải)
+        container.appendChild(renderer.domElement);
+    } catch(e) {
+        console.error('WebGL Error:', e);
+        alert('Không thể khởi tạo WebGL. Vui lòng thử trình duyệt khác hoặc cập nhật driver GPU.');
+        throw e;
+    }
+}
+
+function setupLights() {
+    // Sky ambient - TĂNG từ 0.4 lên 0.6
+    scene.add(new THREE.AmbientLight(0xfff8e1, 0.6));
+
+    // Main sun - TĂNG từ 1.2 lên 1.8
+    const sun = new THREE.DirectionalLight(0xfff4d6, 1.8);
+    sun.position.set(15, 35, 20);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048,2048);
+    sun.shadow.camera.near=0.5; sun.shadow.camera.far=120;
+    sun.shadow.camera.left=-45; sun.shadow.camera.right=45;
+    sun.shadow.camera.top=45;   sun.shadow.camera.bottom=-45;
+    sun.shadow.bias=-0.001;
+    scene.add(sun);
+
+    // Hemisphere sky/ground - TĂNG từ 0.5 lên 0.7
+    scene.add(new THREE.HemisphereLight(0xb3e5fc, 0x66bb6a, 0.7));
+
+    // Warm fill from front - TĂNG từ 0.3 lên 0.5
+    const fill = new THREE.DirectionalLight(0xffd89b, 0.5);
+    fill.position.set(-10, 8, 15);
+    scene.add(fill);
+
+    // Inner canopy glow - TĂNG từ 0.8 lên 1.0
+    const inner = new THREE.PointLight(0xc8e6c9, 1.0, 25);
+    inner.position.set(0, 7, 0);
+    scene.add(inner);
+    
+    // Thêm ánh sáng phụ tạo chiều sâu - giữ 0.2
+    const backLight = new THREE.DirectionalLight(0xffc4a3, 0.2);
+    backLight.position.set(-20, 10, -15);
+    scene.add(backLight);
+    
+    // Ánh sáng từ dưới lên - TĂNG từ 0.3 lên 0.4
+    const groundLight = new THREE.PointLight(0xa5d6a7, 0.4, 30);
+    groundLight.position.set(0, -10, 0);
+    scene.add(groundLight);
+}
+
+function setupPostProcessing() {
+    const rp = new RenderPass(scene, camera);
+    // Giảm bloom để tăng hiệu suất
+    const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight), 0.35, 0.5, 0.85);
+    composer = new EffectComposer(renderer);
+    composer.addPass(rp);
+    composer.addPass(bloom);
+}
+
+// ─── IMAGE LOADING ────────────────────────────────────────────────────────────
+// IndexedDB để lưu ảnh không giới hạn dung lượng
+let db;
+
+async function initDB() {
+    return new Promise((resolve, reject) => {
+        // Xóa database cũ nếu có vấn đề (chỉ lần đầu)
+        const deleteRequest = indexedDB.deleteDatabase('CayKiUcDB_old');
+        deleteRequest.onsuccess = () => console.log('🗑️ Đã xóa database cũ (nếu có)');
+        
+        const request = indexedDB.open('CayKiUcDB', 2); // Version 2
+        
+        request.onerror = () => {
+            console.error('❌ Lỗi mở database:', request.error);
+            reject(request.error);
+        };
+        
+        request.onsuccess = () => {
+            db = request.result;
+            console.log('✓ Database đã mở. Version:', db.version);
+            console.log('✓ Object stores:', Array.from(db.objectStoreNames));
+            
+            // Kiểm tra xem có object store 'settings' không
+            if(!db.objectStoreNames.contains('settings')){
+                console.warn('⚠️ Object store "settings" không tồn tại! Cần nâng cấp database.');
+                // Đóng và mở lại với version cao hơn
+                db.close();
+                const upgradeRequest = indexedDB.open('CayKiUcDB', 3);
+                upgradeRequest.onupgradeneeded = (e) => {
+                    const upgradeDb = e.target.result;
+                    if (!upgradeDb.objectStoreNames.contains('settings')) {
+                        upgradeDb.createObjectStore('settings', { keyPath: 'key' });
+                        console.log('✓ Đã tạo object store: settings (upgrade)');
+                    }
+                };
+                upgradeRequest.onsuccess = () => {
+                    db = upgradeRequest.result;
+                    console.log('✓ Database đã nâng cấp lên version 3');
+                    resolve(db);
+                };
+                upgradeRequest.onerror = () => reject(upgradeRequest.error);
+            } else {
+                resolve(db);
+            }
+        };
+        
+        request.onupgradeneeded = (e) => {
+            db = e.target.result;
+            console.log('🔄 Đang nâng cấp database từ version', e.oldVersion, 'lên', e.newVersion);
+            
+            // Tạo object store cho images nếu chưa có
+            if (!db.objectStoreNames.contains('images')) {
+                db.createObjectStore('images', { keyPath: 'id', autoIncrement: true });
+                console.log('✓ Đã tạo object store: images');
+            }
+            
+            // Tạo object store cho settings (background, etc)
+            if (!db.objectStoreNames.contains('settings')) {
+                db.createObjectStore('settings', { keyPath: 'key' });
+                console.log('✓ Đã tạo object store: settings');
+            }
+        };
+    });
+}
+
+async function saveImageToDB(dataURL) {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['images'], 'readwrite');
+        const store = transaction.objectStore('images');
+        const request = store.add({ dataURL, timestamp: Date.now() });
+        
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+async function getAllImagesFromDB() {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['images'], 'readonly');
+        const store = transaction.objectStore('images');
+        const request = store.getAll();
+        
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+async function clearAllImagesFromDB() {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['images'], 'readwrite');
+        const store = transaction.objectStore('images');
+        const request = store.clear();
+        
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+    });
+}
+
+async function saveBackgroundToDB(dataURL) {
+    return new Promise((resolve, reject) => {
+        if(!db){
+            console.error('❌ Database chưa sẵn sàng');
+            reject(new Error('Database not ready'));
+            return;
+        }
+        
+        const transaction = db.transaction(['settings'], 'readwrite');
+        const store = transaction.objectStore('settings');
+        const request = store.put({ key: 'background', dataURL, timestamp: Date.now() });
+        
+        request.onsuccess = () => {
+            console.log('✓ Đã lưu ảnh nền vào IndexedDB');
+            resolve();
+        };
+        request.onerror = () => {
+            console.error('❌ Lỗi lưu ảnh nền:', request.error);
+            reject(request.error);
+        };
+    });
+}
+
+async function loadBackgroundFromDB() {
+    return new Promise((resolve, reject) => {
+        if(!db){
+            console.error('❌ Database chưa sẵn sàng');
+            reject(new Error('Database not ready'));
+            return;
+        }
+        
+        const transaction = db.transaction(['settings'], 'readonly');
+        const store = transaction.objectStore('settings');
+        const request = store.get('background');
+        
+        request.onsuccess = () => {
+            const result = request.result;
+            if(result && result.dataURL){
+                console.log('✓ Đã tìm thấy ảnh nền trong database');
+            } else {
+                console.log('ℹ Chưa có ảnh nền trong database');
+            }
+            resolve(result);
+        };
+        request.onerror = () => {
+            console.error('❌ Lỗi load ảnh nền:', request.error);
+            reject(request.error);
+        };
+    });
+}
+
+async function loadPredefinedImages() {
+    console.log('Sẵn sàng tải ảnh từ máy tính');
+}
+
+function handleImageUpload(e) {
+    let uploadCount = 0;
+    const totalFiles = e.target.files.length;
+    
+    Array.from(e.target.files).forEach(f=>{
+        if(!f.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = async ev=>{
+            const dataURL = ev.target.result;
+            uploadCount++;
+            
+            try {
+                await saveImageToDB(dataURL);
+                console.log(`✓ Đã lưu ${uploadCount}/${totalFiles} ảnh`);
+            } catch(e) {
+                console.warn('Không thể lưu ảnh:', e);
+            }
+            
+            // Load ảnh lên cây
+            new THREE.TextureLoader().load(dataURL,(t)=>{
+                t.colorSpace=THREE.SRGBColorSpace; addPhotoToScene(t);
+                rebuildStringLines();
+            });
+        };
+        reader.readAsDataURL(f);
+    });
+}
+
+// Load ảnh đã lưu từ IndexedDB
+async function loadSavedImages() {
+    try {
+        const images = await getAllImagesFromDB();
+        if (images && images.length > 0) {
+            console.log(`✓ Tìm thấy ${images.length} ảnh đã lưu`);
+            images.forEach(img => {
+                new THREE.TextureLoader().load(img.dataURL,(t)=>{
+                    t.colorSpace=THREE.SRGBColorSpace; addPhotoToScene(t);
+                });
+            });
+            return true;
+        }
+    } catch(e) {
+        console.warn('Không thể load ảnh đã lưu:', e);
+    }
+    return false;
+}
+
+// ─── CAMERA PERMISSION ────────────────────────────────────────────────────────
+function showCameraBanner(){ document.getElementById('camera-permission-banner').classList.add('show'); }
+function hideCameraBanner(){
+    const b=document.getElementById('camera-permission-banner');
+    b.classList.remove('show'); b.classList.add('hide');
+    setTimeout(()=>b.style.display='none',500);
+}
+async function checkCameraPermission(){
+    try{
+        const s=await navigator.mediaDevices.getUserMedia({video:true});
+        s.getTracks().forEach(t=>t.stop()); hideCameraBanner(); return true;
+    }catch(e){ showCameraBanner(); return false; }
+}
+async function requestCameraPermission(){
+    try{
+        const s=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:640},height:{ideal:480},frameRate:{ideal:30}}});
+        hideCameraBanner();
+        
+        // Tự động phát nhạc khi camera được bật
+        if(window.autoPlayMusicOnCamera) {
+            setTimeout(() => window.autoPlayMusicOnCamera(), 500);
+        }
+        
+        if(!handLandmarker) await initMediaPipe();
+        else{ video.srcObject=s; video.addEventListener('loadeddata',predictWebcam); }
+    }catch(e){ alert('Không thể truy cập camera.'); }
+}
+
+// ─── MEDIAPIPE ────────────────────────────────────────────────────────────────
+async function initMediaPipe(){
+    video = document.getElementById('webcam');
+    const vision = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm');
+    handLandmarker = await HandLandmarker.createFromOptions(vision,{
+        baseOptions:{ modelAssetPath:'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task', delegate:'GPU' },
+        runningMode:'VIDEO', numHands:1
+    });
+    const ok = await checkCameraPermission();
+    if(!ok){ debugEl.innerText='Kéo để xoay • Chạm ảnh để xem'; return; }
+    try{
+        const s=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:640},height:{ideal:480},frameRate:{ideal:30}}});
+        hideCameraBanner(); video.srcObject=s;
+        video.addEventListener('loadeddata',predictWebcam);
+        debugEl.innerText='Webcam active. Show hand.';
+        
+        // Tự động phát nhạc khi camera được bật
+        if(window.autoPlayMusicOnCamera) {
+            setTimeout(() => window.autoPlayMusicOnCamera(), 500);
+        }
+    }catch(e){ debugEl.innerText='Camera: '+e.message; showCameraBanner(); }
+}
+
+let lastVideoTime=-1;
+async function predictWebcam(){
+    if(video.currentTime!==lastVideoTime){
+        lastVideoTime=video.currentTime;
+        if(handLandmarker) processGestures(handLandmarker.detectForVideo(video,performance.now()));
+    }
+    requestAnimationFrame(predictWebcam);
+}
+
+function processGestures(result){
+    const t = clock.elapsedTime; // Thêm biến t
+    if(result.landmarks&&result.landmarks.length>0){
+        STATE.hand.detected=true;
+        const lm=result.landmarks[0];
+
+        // Hand center in normalized coords (0–1)
+        const hx = lm[9].x;
+        const hy = lm[9].y;
+        STATE.hand.x = (hx-0.5)*2;
+        STATE.hand.y = (hy-0.5)*2;
+        // NDC for raycasting: flip x (mirror), flip y (canvas vs screen)
+        STATE.hand.ndcX =  (1.0 - hx)*2 - 1;
+        STATE.hand.ndcY = -(hy*2 - 1);
+
+        const wrist=lm[0], mid=lm[9];
+        const handSize=Math.hypot(mid.x-wrist.x,mid.y-wrist.y);
+        if(handSize<0.02) return;
+
+        const tips=[lm[8],lm[12],lm[16],lm[20]];
+        let avgTip=0;
+        tips.forEach(t=>avgTip+=Math.hypot(t.x-wrist.x,t.y-wrist.y));
+        avgTip/=4;
+
+        const pinchDist = Math.hypot(lm[4].x-lm[8].x, lm[4].y-lm[8].y);
+        const ext    = avgTip/handSize;
+        const pinchR = pinchDist/handSize;
+
+        debugEl.innerText=`Ext:${ext.toFixed(2)} Pinch:${pinchR.toFixed(2)} Mode:${STATE.mode}`;
+
+        // ── Mode switching ──
+        if(ext < 1.5){
+            STATE.mode='TREE';
+        } else if(ext > 1.7){
+            STATE.mode='SCATTER';
+        }
+
+        // ── Photo hover detection via NDC proximity ──
+        // ONLY works in SCATTER mode (not in TREE mode to avoid confusion)
+        if(STATE.mode === 'SCATTER' && photoObjects.length>0){
+            const isPinching = pinchR < 0.35;
+            
+            // ── AUTO FOCUS: Ảnh nào Ở PHÍA TRƯỚC CAMERA (theo hướng xoay) sẽ được focus ──
+            // ⚠️ QUAN TRỌNG: CHỈ chạy khi KHÔNG có ảnh selected VÀ KHÔNG có slideshow (tránh ghi đè)
+            if(STATE.selectedPhoto < 0 && !STATE.autoSlideshow && Math.floor(t * 60) % 15 === 0){
+                let bestPhoto = -1;
+                let bestScore = -999;
+                
+                photoObjects.forEach((p, i) => {
+                    const wp = new THREE.Vector3();
+                    p.group.getWorldPosition(wp);
+                    
+                    // Tính góc của ảnh so với camera (sau khi xoay cây)
+                    const angleToPhoto = Math.atan2(wp.x, wp.z);
+                    const cameraAngle = STATE.rotY; // Góc xoay hiện tại của cây
+                    
+                    // Tính độ lệch góc (ảnh nào thẳng hàng với camera nhất)
+                    let angleDiff = angleToPhoto - cameraAngle;
+                    // Normalize về [-PI, PI]
+                    while(angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                    while(angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                    
+                    // Score cao nhất = ảnh thẳng hàng với camera (angleDiff gần 0)
+                    // Cộng thêm điểm cho ảnh gần camera hơn
+                    const distToCamera = Math.sqrt(wp.x*wp.x + wp.z*wp.z);
+                    const score = -Math.abs(angleDiff) - distToCamera * 0.01;
+                    
+                    if(score > bestScore){
+                        bestScore = score;
+                        bestPhoto = i;
+                    }
+                });
+                
+                // Update focus nếu tìm thấy ảnh phù hợp
+                if(bestPhoto >= 0){
+                    STATE.focusedPhoto = bestPhoto;
+                }
+            }
+            
+            // ⚠️ KHÓA focusedPhoto khi có ảnh selected hoặc slideshow (không cho thay đổi)
+            if(STATE.selectedPhoto >= 0 || STATE.lockedPhoto >= 0){
+                // Ưu tiên lockedPhoto (Enter/Click/Slideshow), sau đó mới selectedPhoto (Pinch)
+                STATE.focusedPhoto = STATE.lockedPhoto >= 0 ? STATE.lockedPhoto : STATE.selectedPhoto;
+            }
+            
+            // ── SWIPE DETECTION: Lướt tay trái/phải để chuyển ảnh thủ công (BỎ - dùng wave thay thế) ──
+            STATE.lastHandX = STATE.hand.x;
+            
+            // ── PINCH LOGIC: Chọn ảnh đang focus (CHỈ dùng selectedPhoto) ──
+            if(isPinching){
+                // Pinch: chọn ảnh focused
+                if(STATE.selectedPhoto < 0){
+                    STATE.selectedPhoto = STATE.focusedPhoto;
+                }
+                debugEl.innerText=`PINCH - Xem ảnh #${STATE.selectedPhoto}`;
+            } 
+            else {
+                // Nhả pinch → deselect (CHỈ ảnh pinch, không ảnh Enter/Click)
+                STATE.selectedPhoto = -1;
+                debugEl.innerText=`Focused: #${STATE.focusedPhoto} | Pinch/Enter to view`;
+            }
+        } else {
+            // In TREE mode or no photos: clear selection
+            STATE.hoveredPhoto  = -1;
+            STATE.selectedPhoto = -1;
+            debugEl.innerText=`Ext:${ext.toFixed(2)} Pinch:${pinchR.toFixed(2)} Mode:${STATE.mode}`;
+        }
+
+    } else {
+        STATE.hand.detected=false;
+        STATE.hoveredPhoto=-1;
+        STATE.selectedPhoto=-1;
+        debugEl.innerText='No hand detected';
+    }
+}
+
+// ─── EVENTS ───────────────────────────────────────────────────────────────────
+function setupEvents(){
+    window.addEventListener('resize',()=>{
+        camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+        renderer.setSize(innerWidth,innerHeight); composer.setSize(innerWidth,innerHeight);
+    });
+    document.getElementById('file-input').addEventListener('change',handleImageUpload);
+    document.getElementById('folder-input').addEventListener('change',handleImageUpload);
+    document.getElementById('request-camera-btn').addEventListener('click',requestCameraPermission);
+    
+    // ── Ảnh nền (Background) ──
+    document.getElementById('background-input').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if(!file){
+            console.log('⚠️ Không có file nào được chọn');
+            return;
+        }
+        
+        if(!file.type.startsWith('image/')){
+            console.log('⚠️ File không phải là ảnh:', file.type);
+            return;
+        }
+        
+        console.log('📤 Đang tải ảnh nền:', file.name, '(', (file.size / 1024).toFixed(2), 'KB)');
+        
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+            const dataURL = ev.target.result;
+            console.log('✓ Đã đọc file, kích thước:', (dataURL.length / 1024).toFixed(2), 'KB');
+            
+            // Tạo texture từ ảnh và set làm background của scene
+            const textureLoader = new THREE.TextureLoader();
+            textureLoader.load(dataURL, (texture) => {
+                scene.background = texture;
+                console.log('✓ Đã đặt ảnh nền cho scene (hiển thị ngay)');
+            }, undefined, (error) => {
+                console.error('❌ Lỗi load texture:', error);
+            });
+            
+            // Lưu vào IndexedDB
+            try {
+                await saveBackgroundToDB(dataURL);
+                console.log('✓ Đã lưu ảnh nền vào IndexedDB');
+            } catch(e) {
+                console.error('❌ Không thể lưu ảnh nền vào IndexedDB:', e);
+                // Fallback: lưu vào localStorage (giới hạn ~5MB)
+                try {
+                    localStorage.setItem('backgroundImage', dataURL);
+                    console.log('✓ Đã lưu ảnh nền vào localStorage (fallback)');
+                } catch(e2) {
+                    console.error('❌ Không thể lưu vào localStorage:', e2);
+                    alert('Ảnh nền quá lớn! Vui lòng chọn ảnh nhỏ hơn.');
+                }
+            }
+        };
+        
+        reader.onerror = (e) => {
+            console.error('❌ Lỗi đọc file:', e);
+        };
+        
+        reader.readAsDataURL(file);
+    });
+    
+    // ── Nhạc nền ──
+    const bgMusic = document.getElementById('background-music');
+    const audioBtn = document.getElementById('audio-toggle-btn');
+    let isMusicPlaying = false;
+    
+    // Tự động phát nhạc khi camera được bật
+    window.autoPlayMusicOnCamera = () => {
+        bgMusic.play().then(() => {
+            isMusicPlaying = true;
+            audioBtn.textContent = '🔊';
+            audioBtn.classList.remove('muted');
+            console.log('🎵 Nhạc nền đã bật tự động');
+        }).catch(e => {
+            console.log('Không thể tự động phát nhạc:', e);
+        });
+    };
+    
+    // Toggle nhạc
+    audioBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Không trigger startMusic
+        if (isMusicPlaying) {
+            bgMusic.pause();
+            audioBtn.textContent = '🔇';
+            audioBtn.classList.add('muted');
+            isMusicPlaying = false;
+        } else {
+            bgMusic.play();
+            audioBtn.textContent = '🔊';
+            audioBtn.classList.remove('muted');
+            isMusicPlaying = true;
+        }
+    });
+    
+    // ── Slideshow tự động ──
+    const slideshowBtn = document.getElementById('slideshow-btn');
+    const slideshowIntervalInput = document.getElementById('slideshow-interval-input');
+    
+    // Lắng nghe thay đổi thời gian
+    slideshowIntervalInput.addEventListener('change', (e) => {
+        let value = parseInt(e.target.value);
+        if(isNaN(value) || value < 1) value = 1;
+        if(value > 60) value = 60;
+        e.target.value = value;
+        console.log(`⏱️ Đã đổi thời gian slideshow: ${value} giây`);
+    });
+    
+    slideshowBtn.addEventListener('click', () => {
+        STATE.autoSlideshow = !STATE.autoSlideshow;
+        
+        if(STATE.autoSlideshow){
+            if(photoObjects.length === 0){
+                console.log('⚠️ Chưa có ảnh để slideshow');
+                STATE.autoSlideshow = false;
+                return;
+            }
+            
+            // Bật slideshow
+            slideshowBtn.classList.add('active');
+            slideshowBtn.textContent = '⏸️';
+            slideshowBtn.title = 'Tạm dừng Slideshow';
+            
+            // CHỌN ẢNH NGẪU NHIÊN ĐẦU TIÊN
+            const randomIndex = Math.floor(Math.random() * photoObjects.length);
+            STATE.focusedPhoto = randomIndex;
+            STATE.lockedPhoto = randomIndex;
+            
+            // ZOOM NGAY LẬP TỨC - SET SCALE TRỰC TIẾP (không đợi updatePhotos)
+            if(photoObjects[randomIndex] && photoObjects[randomIndex].group){
+                photoObjects[randomIndex].group.scale.setScalar(4.5);
+                console.log(`⚡ ZOOM NGAY ảnh #${randomIndex} lên 4.5x (trong button handler)`);
+            }
+            
+            // ẢNH ĐẦU TIÊN CHỈ HIỂN THỊ 1 GIÂY
+            STATE.slideshowTimer = 0;
+            STATE.slideshowInterval = 1; // Ảnh đầu tiên 1 giây
+            
+            // Đọc thời gian từ input (sẽ dùng cho các ảnh sau)
+            const userInterval = parseInt(slideshowIntervalInput.value) || 5;
+            
+            console.log(`🎬 BẬT SLIDESHOW`);
+            console.log(`   → Ảnh ngẫu nhiên #${randomIndex + 1}/${photoObjects.length}`);
+            console.log(`   → Ảnh đầu tiên: 1 giây, các ảnh sau: ${userInterval} giây`);
+        } else {
+            // Tắt slideshow
+            slideshowBtn.classList.remove('active');
+            slideshowBtn.textContent = '▶️';
+            slideshowBtn.title = 'Tự động xem ảnh (Slideshow)';
+            STATE.lockedPhoto = -1;
+            STATE.slideshowTimer = 0;
+            STATE.slideshowInterval = 5; // Reset về 5 giây
+            STATE.slideshowJustChanged = false;
+            
+            console.log('⏹️ TẮT SLIDESHOW');
+        }
+    });
+    
+    // ── Help Dialog ──
+    const helpBtn = document.getElementById('help-btn');
+    const helpDialog = document.getElementById('help-dialog');
+    const helpOverlay = document.getElementById('help-overlay');
+    const closeHelp = document.getElementById('close-help');
+    
+    const showHelp = () => {
+        helpDialog.classList.add('show');
+        helpOverlay.classList.add('show');
+    };
+    
+    const hideHelp = () => {
+        helpDialog.classList.remove('show');
+        helpOverlay.classList.remove('show');
+    };
+    
+    helpBtn.addEventListener('click', showHelp);
+    closeHelp.addEventListener('click', hideHelp);
+    helpOverlay.addEventListener('click', hideHelp);
+    
+    // ESC để đóng help
+    window.addEventListener('keydown', (e) => {
+        if(e.key === 'Escape' && helpDialog.classList.contains('show')){
+            hideHelp();
+        }
+    });
+    
+    // ── Xóa tất cả ảnh ──
+    document.getElementById('clear-photos-btn').addEventListener('click', async () => {
+        if (!confirm('Bạn có chắc muốn xóa TẤT CẢ ảnh trên cây VÀ ẢNH NỀN?\n\nLưu ý: Thao tác này sẽ xóa:\n- Tất cả ảnh trên cây\n- Ảnh nền\n- Dữ liệu trong bộ nhớ (IndexedDB)\n\nThao tác này không thể hoàn tác!')) {
+            return;
+        }
+        
+        // Xóa tất cả ảnh khỏi scene
+        photoObjects.forEach(p => {
+            if (p.group) {
+                photoGroup.remove(p.group);
+            }
+            if (p._stringLine) {
+                scene.remove(p._stringLine);
+            }
+        });
+        photoObjects = [];
+        stringLines = [];
+        
+        // Xóa từ IndexedDB
+        try {
+            await clearAllImagesFromDB();
+            console.log('✓ Đã xóa ảnh từ IndexedDB');
+            
+            // Xóa ảnh nền từ IndexedDB
+            const bgTransaction = db.transaction(['settings'], 'readwrite');
+            const bgStore = bgTransaction.objectStore('settings');
+            await bgStore.delete('background');
+            console.log('✓ Đã xóa ảnh nền từ IndexedDB');
+            
+            // Xóa ảnh nền từ localStorage
+            localStorage.removeItem('backgroundImage');
+            console.log('✓ Đã xóa ảnh nền từ localStorage');
+            
+            // Reset background về màu xanh mặc định
+            scene.background = new THREE.Color(0xb8e6f5);
+            console.log('✓ Đã reset background về màu xanh mặc định');
+            
+        } catch(e) {
+            console.warn('Không thể xóa IndexedDB:', e);
+        }
+        
+        alert('✓ Đã xóa tất cả!\n\n- Ảnh trên cây: Đã xóa\n- Ảnh nền: Đã xóa\n- Bộ nhớ (IndexedDB): Đã xóa');
+    });
+    
+    setTimeout(checkCameraPermission,1200);
+    
+    // ── Mouse wheel: scroll up = scatter, scroll down = tree ──
+    window.addEventListener('wheel', (e) => {
+        if(e.deltaY < 0){
+            // Scroll up → SCATTER mode
+            STATE.mode = 'SCATTER';
+        } else {
+            // Scroll down → TREE mode
+            STATE.mode = 'TREE';
+            STATE.lockedPhoto = -1; // Deselect when going back to tree
+        }
+    });
+    
+    // ── Keyboard: Arrow keys to navigate photos ──
+    window.addEventListener('keydown', (e) => {
+        // ── Mũi tên TRÁI/PHẢI: Chuyển ảnh focus (bảo đảm chuyển đúng 1 ảnh) ──
+        if(e.key === 'ArrowRight'){
+            // Next photo - chuyển sang ảnh tiếp theo
+            if(photoObjects.length > 0){
+                // Tắt slideshow nếu đang bật
+                if(STATE.autoSlideshow){
+                    STATE.autoSlideshow = false;
+                    document.getElementById('slideshow-btn').classList.remove('active');
+                    document.getElementById('slideshow-btn').textContent = '▶️';
+                    console.log('⏹️ Tắt Slideshow (người dùng chuyển ảnh thủ công)');
+                }
+                
+                // Nếu đang có ảnh selected → bỏ chọn trước
+                if(STATE.selectedPhoto >= 0){
+                    STATE.selectedPhoto = -1;
+                }
+                STATE.focusedPhoto = (STATE.focusedPhoto + 1) % photoObjects.length;
+                console.log(`→ Ảnh tiếp theo: #${STATE.focusedPhoto}`);
+            }
+            e.preventDefault(); // Ngăn scroll trang
+            return;
+        } else if(e.key === 'ArrowLeft'){
+            // Previous photo - chuyển về ảnh trước
+            if(photoObjects.length > 0){
+                // Tắt slideshow nếu đang bật
+                if(STATE.autoSlideshow){
+                    STATE.autoSlideshow = false;
+                    document.getElementById('slideshow-btn').classList.remove('active');
+                    document.getElementById('slideshow-btn').textContent = '▶️';
+                    console.log('⏹️ Tắt Slideshow (người dùng chuyển ảnh thủ công)');
+                }
+                
+                // Nếu đang có ảnh selected → bỏ chọn trước
+                if(STATE.selectedPhoto >= 0){
+                    STATE.selectedPhoto = -1;
+                }
+                STATE.focusedPhoto = (STATE.focusedPhoto - 1 + photoObjects.length) % photoObjects.length;
+                console.log(`← Ảnh trước: #${STATE.focusedPhoto}`);
+            }
+            e.preventDefault(); // Ngăn scroll trang
+            return;
+        }
+        
+        // ── Mũi tên LÊN/XUỐNG: Xòe/Thu cây ──
+        else if(e.key === 'ArrowUp'){
+            // Lên = Xòe cây (SCATTER mode)
+            STATE.mode = 'SCATTER';
+            console.log('↑ Xòe cây - SCATTER mode');
+            e.preventDefault();
+            return;
+        } else if(e.key === 'ArrowDown'){
+            // Xuống = Thu cây (TREE mode)
+            STATE.mode = 'TREE';
+            STATE.lockedPhoto = -1; // Deselect khi về cây
+            console.log('↓ Thu cây - TREE mode');
+            e.preventDefault();
+            return;
+        }
+        
+        // ── ENTER: Chọn/Bỏ chọn ảnh đang focus (CHỈ dùng lockedPhoto) ──
+        else if(e.key === 'Enter'){
+            if(photoObjects.length > 0){
+                // Tắt slideshow nếu đang bật
+                if(STATE.autoSlideshow){
+                    STATE.autoSlideshow = false;
+                    document.getElementById('slideshow-btn').classList.remove('active');
+                    document.getElementById('slideshow-btn').textContent = '▶️';
+                    console.log('⏹️ Tắt Slideshow (người dùng chọn ảnh thủ công)');
+                }
+                
+                if(STATE.lockedPhoto < 0){
+                    // Chọn ảnh đang focus
+                    STATE.lockedPhoto = STATE.focusedPhoto;
+                    console.log(`✓ Enter - Chọn ảnh #${STATE.lockedPhoto}`);
+                } else {
+                    // Bỏ chọn
+                    STATE.lockedPhoto = -1;
+                    console.log('✗ Enter - Bỏ chọn ảnh');
+                }
+            }
+            e.preventDefault();
+            return;
+        }
+        
+        // ── SPACE: Chọn/Bỏ chọn ảnh (giống Enter) ──
+        else if(e.key === ' '){
+            if(photoObjects.length > 0){
+                // Tắt slideshow nếu đang bật
+                if(STATE.autoSlideshow){
+                    STATE.autoSlideshow = false;
+                    document.getElementById('slideshow-btn').classList.remove('active');
+                    document.getElementById('slideshow-btn').textContent = '▶️';
+                    console.log('⏹️ Tắt Slideshow (người dùng chọn ảnh thủ công)');
+                }
+                
+                if(STATE.lockedPhoto < 0){
+                    STATE.lockedPhoto = STATE.focusedPhoto;
+                    console.log(`✓ Space - Chọn ảnh #${STATE.lockedPhoto}`);
+                } else {
+                    STATE.lockedPhoto = -1;
+                    console.log('✗ Space - Bỏ chọn ảnh');
+                }
+            }
+            e.preventDefault();
+            return;
+        }
+        
+        // ── H: Ẩn/hiện UI ──
+        else if(e.key.toLowerCase()==='h'){
+            document.querySelector('.controls-wrapper').classList.toggle('ui-hidden');
+            document.getElementById('webcam-wrapper').classList.toggle('ui-hidden');
+        }
+    });
+    
+    // ── Mouse click: click on photo to select ──
+    window.addEventListener('click', (e) => {
+        // Bỏ qua click vào UI elements
+        if(e.target.closest('.controls-wrapper') || 
+           e.target.closest('#audio-toggle-btn') || 
+           e.target.closest('#help-btn') ||
+           e.target.closest('#help-dialog')) {
+            return;
+        }
+        
+        if(photoObjects.length === 0) return;
+        
+        // Convert mouse position to NDC
+        const mouse = new THREE.Vector2();
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        
+        // Find closest photo to click
+        let clickedPhoto = -1;
+        let minDist = 0.3;
+        
+        photoObjects.forEach((p, i) => {
+            const wp = new THREE.Vector3();
+            p.group.getWorldPosition(wp);
+            wp.project(camera);
+            const dx = wp.x - mouse.x;
+            const dy = wp.y - mouse.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if(dist < minDist){
+                minDist = dist;
+                clickedPhoto = i;
+            }
+        });
+        
+        if(clickedPhoto >= 0){
+            // Tắt slideshow nếu đang bật
+            if(STATE.autoSlideshow){
+                STATE.autoSlideshow = false;
+                document.getElementById('slideshow-btn').classList.remove('active');
+                document.getElementById('slideshow-btn').textContent = '▶️';
+                console.log('⏹️ Tắt Slideshow (người dùng click ảnh thủ công)');
+            }
+            
+            // Clicked on a photo → toggle select (CHỈ dùng lockedPhoto)
+            if(STATE.lockedPhoto === clickedPhoto){
+                // Click lại ảnh đang chọn → bỏ chọn
+                STATE.lockedPhoto = -1;
+                console.log(`🖱️ Click bỏ chọn ảnh #${clickedPhoto}`);
+            } else {
+                // Click ảnh khác → chọn ảnh đó
+                STATE.lockedPhoto = clickedPhoto;
+                STATE.focusedPhoto = clickedPhoto; // Đồng bộ focus
+                console.log(`🖱️ Click chọn ảnh #${clickedPhoto}`);
+            }
+        } else {
+            // Clicked on empty space → deselect
+            STATE.lockedPhoto = -1;
+            console.log('🖱️ Click vào chỗ trống - bỏ chọn');
+        }
+    });
+}
+
+// ─── ANIMATE ──────────────────────────────────────────────────────────────────
+function animate(){
+    requestAnimationFrame(animate);
+    const dt = Math.min(clock.getDelta(), 0.05);
+
+    // Tick cooldown
+    if(STATE.pinchCooldown > 0) STATE.pinchCooldown--;
+    if(STATE.swipeCooldown > 0) STATE.swipeCooldown--;
+    if(STATE.waveCooldown > 0) STATE.waveCooldown--;
+
+    // ── SLIDESHOW TỰ ĐỘNG ──
+    if(STATE.autoSlideshow && photoObjects.length > 0){
+        STATE.slideshowTimer += dt;
+        
+        if(STATE.slideshowTimer >= STATE.slideshowInterval){
+            // Hết thời gian → chuyển sang ảnh NGẪU NHIÊN tiếp theo
+            STATE.slideshowTimer = 0;
+            
+            // Chọn ảnh ngẫu nhiên (khác ảnh hiện tại)
+            let randomIndex;
+            if(photoObjects.length > 1){
+                // Nếu có nhiều hơn 1 ảnh, chọn ảnh khác ảnh hiện tại
+                do {
+                    randomIndex = Math.floor(Math.random() * photoObjects.length);
+                } while(randomIndex === STATE.focusedPhoto);
+            } else {
+                // Chỉ có 1 ảnh thì giữ nguyên
+                randomIndex = 0;
+            }
+            
+            STATE.focusedPhoto = randomIndex;
+            STATE.lockedPhoto = randomIndex;
+            
+            // ZOOM NGAY LẬP TỨC - SET SCALE TRỰC TIẾP
+            if(photoObjects[randomIndex] && photoObjects[randomIndex].group){
+                photoObjects[randomIndex].group.scale.setScalar(4.5);
+                console.log(`⚡ ZOOM NGAY ảnh #${randomIndex} lên 4.5x (chuyển ảnh)`);
+            }
+            
+            // Từ ảnh thứ 2 trở đi: dùng thời gian từ input
+            const userInterval = parseInt(document.getElementById('slideshow-interval-input').value) || 5;
+            STATE.slideshowInterval = userInterval;
+            
+            console.log(`🎬 Slideshow: Chuyển sang ảnh ngẫu nhiên #${randomIndex + 1}/${photoObjects.length} (${userInterval} giây)`);
+        }
+        
+        // Debug: hiển thị thời gian còn lại
+        if(Math.floor(STATE.slideshowTimer * 10) % 10 === 0){
+            const remaining = (STATE.slideshowInterval - STATE.slideshowTimer).toFixed(1);
+            debugEl.innerText = `🎬 Slideshow: Ảnh ${STATE.focusedPhoto + 1}/${photoObjects.length} | Còn ${remaining}s`;
+        }
+    }
+
+    // Camera zoom: zoom OUT when scattered to see ALL photos
+    const targetZ = STATE.mode === 'SCATTER' ? 30 : 62;  // GẦN HƠN - từ 35 xuống 30
+    const targetY = STATE.mode === 'SCATTER' ? 0 : 3;    // Eye level
+    const targetFOV = STATE.mode === 'SCATTER' ? 60 : 42; // FOV RỘNG HƠN - từ 55 lên 60
+    camera.position.z += (targetZ - camera.position.z) * 1.5 * dt;
+    camera.position.y += (targetY - camera.position.y) * 1.5 * dt;
+    camera.fov += (targetFOV - camera.fov) * 1.5 * dt;
+    camera.updateProjectionMatrix();
+
+    // Rotation
+    // DỪNG HOÀN TOÀN khi có ảnh được selected (Pinch HOẶC Enter/Click)
+    const hasSelectedPhoto = (STATE.selectedPhoto >= 0 || STATE.lockedPhoto >= 0);
+    
+    if(hasSelectedPhoto){
+        // Có ảnh selected → KHÔNG THAY ĐỔI rotY, chỉ reset rotX về 0
+        STATE.rotX += (0-STATE.rotX)*5*dt; // Reset rotX nhanh hơn
+    } else if(STATE.mode==='SCATTER'&&STATE.hand.detected){
+        // Xoay theo tay
+        STATE.rotY += (STATE.hand.x*Math.PI*0.8 - STATE.rotY)*3*dt;
+        STATE.rotX += (STATE.hand.y*Math.PI*0.2 - STATE.rotX)*3*dt;
+    } else {
+        // Tự động xoay chậm (chỉ khi không có ảnh selected)
+        STATE.rotY += 0.25*dt;
+        STATE.rotX += (0-STATE.rotX)*2*dt;
+    }
+
+    if(treeGroup){ 
+        treeGroup.rotation.y=STATE.rotY; 
+        treeGroup.rotation.x=STATE.rotX; 
+    }
+    
+    // Photos: DỪNG HOÀN TOÀN khi có ảnh selected
+    if(photoGroup){ 
+        if(!hasSelectedPhoto){
+            // Không có ảnh selected → xoay theo cây
+            photoGroup.rotation.y=STATE.rotY; 
+            photoGroup.rotation.x=STATE.rotX;
+        } else {
+            // Có ảnh selected → GIỮ NGUYÊN rotation (không update)
+        }
+    }
+    
+    if(leafInstances){ leafInstances.rotation.y=STATE.rotY; leafInstances.rotation.x=STATE.rotX; }
+
+    updateLeaves(dt);
+    updatePhotos(dt);
+    updateStringLines(STATE.mode);
+    updateFloatingParticles();
+
+    composer.render();
+}
+
+// ─── MAIN INIT ────────────────────────────────────────────────────────────────
+async function init(){
+    // Khởi tạo IndexedDB trước
+    await initDB();
+    
+    initThree();
+    setupLights();
+    buildTree();
+    buildLeaves();
+    buildFloatingParticles();
+    scene.add(photoGroup);
+    setupPostProcessing();
+    setupEvents();
+    
+    // Ưu tiên load từ IndexedDB
+    const hasSavedImages = await loadSavedImages();
+    if (!hasSavedImages) {
+        console.log('⚠ Chưa có ảnh. Vui lòng click nút "Tải Album" hoặc "Chọn Ảnh"');
+    }
+    
+    // Load ảnh nền nếu có
+    console.log('🔍 Đang kiểm tra ảnh nền...');
+    try {
+        const bgData = await loadBackgroundFromDB();
+        console.log('📦 Dữ liệu ảnh nền từ IndexedDB:', bgData ? 'Có' : 'Không');
+        
+        if(bgData && bgData.dataURL){
+            // Load texture và set làm background
+            const textureLoader = new THREE.TextureLoader();
+            textureLoader.load(bgData.dataURL, (texture) => {
+                scene.background = texture;
+                console.log('✓ Đã load ảnh nền từ IndexedDB');
+                console.log('   → Kích thước:', (bgData.dataURL.length / 1024).toFixed(2), 'KB');
+            }, undefined, (error) => {
+                console.error('❌ Lỗi load texture từ IndexedDB:', error);
+            });
+        } else {
+            console.log('ℹ️ Chưa có ảnh nền trong IndexedDB');
+            
+            // Fallback: thử load từ localStorage
+            const localBg = localStorage.getItem('backgroundImage');
+            if(localBg){
+                const textureLoader = new THREE.TextureLoader();
+                textureLoader.load(localBg, (texture) => {
+                    scene.background = texture;
+                    console.log('✓ Đã load ảnh nền từ localStorage (fallback)');
+                    console.log('   → Kích thước:', (localBg.length / 1024).toFixed(2), 'KB');
+                }, undefined, (error) => {
+                    console.error('❌ Lỗi load texture từ localStorage:', error);
+                });
+            } else {
+                console.log('ℹ️ Chưa có ảnh nền - dùng background xanh mặc định');
+            }
+        }
+    } catch(e) {
+        console.error('❌ Lỗi load ảnh nền:', e);
+        console.error('   → Chi tiết:', e.message);
+        
+        // Fallback: thử load từ localStorage
+        try {
+            const localBg = localStorage.getItem('backgroundImage');
+            if(localBg){
+                const textureLoader = new THREE.TextureLoader();
+                textureLoader.load(localBg, (texture) => {
+                    scene.background = texture;
+                    console.log('✓ Đã load ảnh nền từ localStorage (fallback sau lỗi)');
+                });
+            }
+        } catch(e2) {
+            console.error('❌ Không thể load từ localStorage:', e2);
+        }
+    }
+    
+    await initMediaPipe();
+
+    const loader=document.getElementById('loader');
+    loader.style.opacity=0;
+    setTimeout(()=>loader.remove(),900);
+    animate();
+}
+
+init();
+</script>
+</body>
+</html>
